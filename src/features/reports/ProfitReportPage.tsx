@@ -8,7 +8,6 @@ import {
   Loader2,
   Download,
   TrendingUp,
-  TrendingDown,
   Calendar,
   Package,
   Scale,

@@ -8,7 +8,6 @@ import {
   Loader2,
   Download,
   FileText,
-  TrendingUp,
   TrendingDown,
   Calendar,
   Package,
@@ -131,7 +130,8 @@ export function ContractsReportPage() {
       // Filter sales for this contract within date range
       const contractSales = sales.filter(s => {
         const saleDate = s.date.split('T')[0]
-        return s.contract_id === contract.id &&
+        const sale = s as typeof s & { contract_id?: string }
+        return sale.contract_id === contract.id &&
           saleDate >= dateRange.start &&
           saleDate <= dateRange.end
       })

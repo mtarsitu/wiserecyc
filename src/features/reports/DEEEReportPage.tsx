@@ -100,7 +100,7 @@ export function DEEEReportPage() {
 
   // Query all data
   const { data: acquisitions = [], isLoading: loadingAcquisitions } = useQuery(acquisitionsQueryOptions(companyId))
-  const { data: sales = [], isLoading: loadingSales } = useQuery(salesQueryOptions(companyId))
+  const { data: _sales = [], isLoading: loadingSales } = useQuery(salesQueryOptions(companyId))
   const { data: suppliers = [], isLoading: loadingSuppliers } = useQuery(suppliersQueryOptions(companyId))
 
   const isLoading = loadingAcquisitions || loadingSales || loadingSuppliers

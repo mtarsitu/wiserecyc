@@ -22,8 +22,7 @@ import { suppliersQueryOptions } from '@/features/suppliers/queries'
 import { acquisitionsQueryOptions } from '@/features/acquisitions/queries'
 import { expensesQueryOptions } from '@/features/expenses/queries'
 import { expenseCategoriesQueryOptions } from '@/features/expenses/queries'
-import type { Supplier, Expense, ExpenseCategory, AcquisitionType } from '@/types/database'
-import type { AcquisitionWithDetails } from '@/features/acquisitions/queries'
+import type { Supplier, AcquisitionType } from '@/types/database'
 
 // Payment categories that count as supplier payments
 const PAYMENT_CATEGORY_NAMES = ['AVANS MARFA', 'PLATA MARFA']

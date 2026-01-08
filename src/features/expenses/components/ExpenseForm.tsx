@@ -175,7 +175,7 @@ export function ExpenseForm({ companyId, expense, isLoading, onSubmit, onCancel 
     const { name, value } = e.target
     // Reset attribution_id when attribution_type changes
     if (name === 'attribution_type') {
-      setFormData((prev) => ({ ...prev, [name]: value, attribution_id: null }))
+      setFormData((prev) => ({ ...prev, [name]: (value || null) as AttributionType | null, attribution_id: null }))
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }))
     }

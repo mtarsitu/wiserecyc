@@ -187,14 +187,6 @@ export function DashboardPage() {
     return map
   }, [materials])
 
-  // Helper to check if item should be included (considering hidden types)
-  const shouldIncludeItem = useCallback((item: { acquisition_type?: AcquisitionType }) => {
-    // Hidden types (zero/director) are always included in calculations for average prices
-    // But in the display, we only show them when showHiddenData is true
-    // For price calculations, we ALWAYS include all types (as per user requirement)
-    return true
-  }, [])
-
   // Helper to check if item is hidden type
   const isHiddenItem = useCallback((item: { acquisition_type?: AcquisitionType }) => {
     return item.acquisition_type && item.acquisition_type !== 'normal'
