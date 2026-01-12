@@ -1,15 +1,18 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button, Input, Label, Select, Dialog } from '@/components/ui'
-import { Plus, Trash2, Loader2, Eye, EyeOff } from 'lucide-react'
+import { Plus, Trash2, Loader2, Eye, EyeOff, Truck } from 'lucide-react'
 import { suppliersQueryOptions } from '@/features/suppliers/queries'
 import { materialsQueryOptions } from '@/features/materials/queries'
 import { cashRegistersQueryOptions } from '@/features/cashier/queries'
 import { activeContractsQueryOptions } from '@/features/contracts/queries'
+import { vehiclesQueryOptions, findVehicleByNumber, type VehicleWithRelations } from '@/features/vehicles/queries'
+import { transportersQueryOptions } from '@/features/transporters/queries'
+import { driversQueryOptions } from '@/features/drivers/queries'
 import { useCreateSupplier } from '@/features/suppliers/mutations'
 import { SupplierForm } from '@/features/suppliers/components/SupplierForm'
 import type { AcquisitionWithDetails } from '../queries'
-import type { PaymentStatus, InsertTables, LocationType, AcquisitionType } from '@/types/database'
+import type { PaymentStatus, InsertTables, LocationType, AcquisitionType, TransportType } from '@/types/database'
 
 interface AcquisitionItemInput {
   id?: string
@@ -34,6 +37,13 @@ interface FormData {
   info: string
   notes: string
   items: AcquisitionItemInput[]
+  // Transport fields
+  vehicle_number: string
+  vehicle_id: string | null
+  transporter_id: string | null
+  driver_id: string | null
+  transport_type: TransportType
+  transport_price: number
 }
 
 const emptyItem: AcquisitionItemInput = {
@@ -58,6 +68,13 @@ const initialFormData: FormData = {
   info: '',
   notes: '',
   items: [{ ...emptyItem }],
+  // Transport defaults
+  vehicle_number: '',
+  vehicle_id: null,
+  transporter_id: null,
+  driver_id: null,
+  transport_type: 'intern',
+  transport_price: 0,
 }
 
 // Options for acquisition type (hidden by default, shown with Ctrl+M)
@@ -79,6 +96,8 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [showSupplierDialog, setShowSupplierDialog] = useState(false)
   const [showHiddenOptions, setShowHiddenOptions] = useState(false)
+  const [detectedVehicle, setDetectedVehicle] = useState<VehicleWithRelations | null>(null)
+  const [isDetectingVehicle, setIsDetectingVehicle] = useState(false)
 
   // Keyboard shortcut handler for Ctrl+M / Cmd+M to show hidden options
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -97,7 +116,88 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
   const { data: materials = [] } = useQuery(materialsQueryOptions())
   const { data: cashRegisters = [] } = useQuery(cashRegistersQueryOptions(companyId))
   const { data: contracts = [] } = useQuery(activeContractsQueryOptions(companyId))
+  const { data: vehicles = [] } = useQuery(vehiclesQueryOptions(companyId))
+  const { data: transporters = [] } = useQuery(transportersQueryOptions(companyId))
+  const { data: drivers = [] } = useQuery(driversQueryOptions(companyId))
   const createSupplier = useCreateSupplier()
+
+  // Transporter options for dropdown
+  const transporterOptions = useMemo(() =>
+    transporters.map(t => ({ value: t.id, label: t.name })),
+    [transporters]
+  )
+
+  // Transport type options
+  const transportTypeOptions = [
+    { value: 'intern', label: 'Transport intern (flota proprie)' },
+    { value: 'extern', label: 'Transport extern' },
+  ]
+
+  // Filter vehicles based on transport type and transporter
+  const filteredVehicleOptions = useMemo(() => {
+    let filtered = vehicles
+    if (formData.transport_type === 'intern') {
+      filtered = vehicles.filter(v => v.owner_type === 'own_fleet')
+    } else if (formData.transporter_id) {
+      filtered = vehicles.filter(v => v.transporter_id === formData.transporter_id)
+    }
+    return filtered.map(v => ({
+      value: v.id,
+      label: `${v.vehicle_number}${v.driver_name ? ` - ${v.driver_name}` : ''}`
+    }))
+  }, [vehicles, formData.transport_type, formData.transporter_id])
+
+  // Filter drivers based on selected vehicle or transport type
+  const filteredDriverOptions = useMemo(() => {
+    let filtered = drivers
+    if (formData.transport_type === 'intern') {
+      filtered = drivers.filter(d => d.owner_type === 'own_fleet')
+    } else if (formData.transporter_id) {
+      filtered = drivers.filter(d => d.transporter_id === formData.transporter_id)
+    }
+    return filtered.map(d => ({
+      value: d.id,
+      label: `${d.name}${d.id_series ? ` (${d.id_series} ${d.id_number})` : ''}`
+    }))
+  }, [drivers, formData.transport_type, formData.transporter_id])
+
+  // Auto-detect vehicle when vehicle number changes
+  const handleVehicleNumberChange = useCallback(async (vehicleNumber: string) => {
+    setFormData(prev => ({ ...prev, vehicle_number: vehicleNumber }))
+
+    if (vehicleNumber.length >= 3) {
+      setIsDetectingVehicle(true)
+      try {
+        const vehicle = await findVehicleByNumber(companyId, vehicleNumber)
+        if (vehicle) {
+          setDetectedVehicle(vehicle)
+          setFormData(prev => ({
+            ...prev,
+            vehicle_id: vehicle.id,
+            transporter_id: vehicle.transporter_id,
+            transport_type: vehicle.owner_type === 'own_fleet' ? 'intern' : 'extern',
+          }))
+        } else {
+          setDetectedVehicle(null)
+          // Clear related fields if no match
+          setFormData(prev => ({
+            ...prev,
+            vehicle_id: null,
+          }))
+        }
+      } catch (error) {
+        console.error('Error detecting vehicle:', error)
+        setDetectedVehicle(null)
+      }
+      setIsDetectingVehicle(false)
+    } else {
+      setDetectedVehicle(null)
+      setFormData(prev => ({
+        ...prev,
+        vehicle_id: null,
+      }))
+    }
+  }, [companyId])
 
   // Prepare options for selects
   const supplierOptions = useMemo(() =>
@@ -139,10 +239,16 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
 
   useEffect(() => {
     if (acquisition) {
-      // Check if acquisition has location_type and contract_id (cast to access potential extra fields)
+      // Check if acquisition has extended fields (cast to access potential extra fields)
       const acq = acquisition as AcquisitionWithDetails & {
         location_type?: LocationType
         contract_id?: string | null
+        vehicle_id?: string | null
+        transporter_id?: string | null
+        driver_id?: string | null
+        transport_type?: TransportType
+        transport_price?: number
+        vehicle?: { vehicle_number: string } | null
       }
 
       // Check if any item has hidden type
@@ -162,6 +268,13 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
         environment_fund: acquisition.environment_fund,
         info: acquisition.info || '',
         notes: acquisition.notes || '',
+        // Transport fields
+        vehicle_number: acq.vehicle?.vehicle_number || '',
+        vehicle_id: acq.vehicle_id || null,
+        transporter_id: acq.transporter_id || null,
+        driver_id: acq.driver_id || null,
+        transport_type: acq.transport_type || 'intern',
+        transport_price: acq.transport_price || 0,
         items: acquisition.items.map((item) => {
           const itemWithType = item as typeof item & { acquisition_type?: AcquisitionType }
           return {
@@ -391,6 +504,123 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
               )}
             </div>
           )}
+        </div>
+
+        {/* Transport section */}
+        <div className="space-y-4 rounded-lg border p-4 bg-muted/30">
+          <div className="flex items-center gap-2 mb-2">
+            <Truck className="h-5 w-5 text-primary" />
+            <Label className="text-base font-semibold">Transport</Label>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2">
+              <Label htmlFor="transport_type">Tip transport</Label>
+              <Select
+                id="transport_type"
+                value={formData.transport_type}
+                onChange={(e) => {
+                  const value = e.target.value as TransportType
+                  setFormData(prev => ({
+                    ...prev,
+                    transport_type: value,
+                    transporter_id: value === 'intern' ? null : prev.transporter_id,
+                    vehicle_id: null,
+                    vehicle_number: '',
+                    driver_id: null,
+                  }))
+                }}
+                options={transportTypeOptions}
+              />
+            </div>
+
+            {formData.transport_type === 'extern' && (
+              <div className="space-y-2">
+                <Label htmlFor="transporter_id">Transportator</Label>
+                <Select
+                  id="transporter_id"
+                  value={formData.transporter_id || ''}
+                  onChange={(e) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      transporter_id: e.target.value || null,
+                      vehicle_id: null,
+                      vehicle_number: '',
+                      driver_id: null,
+                    }))
+                  }}
+                  options={transporterOptions}
+                  placeholder="Selecteaza transportator"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="vehicle_number">Nr. inmatriculare</Label>
+              <div className="relative">
+                <Input
+                  id="vehicle_number"
+                  value={formData.vehicle_number}
+                  onChange={(e) => handleVehicleNumberChange(e.target.value.toUpperCase())}
+                  placeholder="ex: B-123-ABC"
+                  className={detectedVehicle ? 'border-green-500' : ''}
+                />
+                {isDetectingVehicle && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              {detectedVehicle && (
+                <p className="text-xs text-green-600">
+                  Vehicul detectat: {detectedVehicle.vehicle_type || 'N/A'}
+                  {detectedVehicle.transporter?.name ? ` (${detectedVehicle.transporter.name})` : ''}
+                </p>
+              )}
+              {!detectedVehicle && filteredVehicleOptions.length > 0 && (
+                <Select
+                  id="vehicle_id"
+                  value={formData.vehicle_id || ''}
+                  onChange={(e) => {
+                    const vehicle = vehicles.find(v => v.id === e.target.value)
+                    setFormData(prev => ({
+                      ...prev,
+                      vehicle_id: e.target.value || null,
+                      vehicle_number: vehicle?.vehicle_number || prev.vehicle_number,
+                    }))
+                  }}
+                  options={filteredVehicleOptions}
+                  placeholder="Sau selecteaza vehicul"
+                />
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="driver_id">Sofer</Label>
+              <Select
+                id="driver_id"
+                value={formData.driver_id || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, driver_id: e.target.value || null }))}
+                options={filteredDriverOptions}
+                placeholder="Selecteaza sofer"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="transport_price">Cost transport (RON)</Label>
+              <Input
+                id="transport_price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.transport_price || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, transport_price: Number(e.target.value) || 0 }))}
+                placeholder="0.00"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Cash register selector - only show when paid */}

@@ -20,6 +20,7 @@ export type CashTransactionType = 'income' | 'expense'
 export type TransactionSourceType = 'manual' | 'acquisition' | 'sale' | 'expense'
 export type MaterialCategory = 'feros' | 'neferos' | 'deee' | 'altele'
 export type AcquisitionType = 'normal' | 'zero' | 'director'
+export type VehicleOwnerType = 'own_fleet' | 'transporter' | 'supplier'
 
 export interface Database {
   public: {
@@ -574,6 +575,8 @@ export interface Database {
           transport_type: TransportType | null
           transport_price: number
           transporter_id: string | null
+          vehicle_id: string | null
+          driver_id: string | null
           scale_number: string | null
           notes: string | null
           status: SaleStatus
@@ -602,6 +605,8 @@ export interface Database {
           transport_type?: TransportType | null
           transport_price?: number
           transporter_id?: string | null
+          vehicle_id?: string | null
+          driver_id?: string | null
           scale_number?: string | null
           notes?: string | null
           status?: SaleStatus
@@ -630,6 +635,8 @@ export interface Database {
           transport_type?: TransportType | null
           transport_price?: number
           transporter_id?: string | null
+          vehicle_id?: string | null
+          driver_id?: string | null
           scale_number?: string | null
           notes?: string | null
           status?: SaleStatus
@@ -978,6 +985,129 @@ export interface Database {
           updated_at?: string
         }
       }
+      vehicles: {
+        Row: {
+          id: string
+          company_id: string
+          vehicle_number: string
+          vehicle_type: string | null
+          owner_type: VehicleOwnerType
+          transporter_id: string | null
+          supplier_id: string | null
+          driver_name: string | null
+          has_transport_license: boolean
+          transport_license_number: string | null
+          transport_license_expiry: string | null
+          notes: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          company_id: string
+          vehicle_number: string
+          vehicle_type?: string | null
+          owner_type?: VehicleOwnerType
+          transporter_id?: string | null
+          supplier_id?: string | null
+          driver_name?: string | null
+          has_transport_license?: boolean
+          transport_license_number?: string | null
+          transport_license_expiry?: string | null
+          notes?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          company_id?: string
+          vehicle_number?: string
+          vehicle_type?: string | null
+          owner_type?: VehicleOwnerType
+          transporter_id?: string | null
+          supplier_id?: string | null
+          driver_name?: string | null
+          has_transport_license?: boolean
+          transport_license_number?: string | null
+          transport_license_expiry?: string | null
+          notes?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      drivers: {
+        Row: {
+          id: string
+          company_id: string
+          name: string
+          id_series: string | null
+          id_number: string | null
+          phone: string | null
+          owner_type: VehicleOwnerType
+          transporter_id: string | null
+          supplier_id: string | null
+          notes: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          company_id: string
+          name: string
+          id_series?: string | null
+          id_number?: string | null
+          phone?: string | null
+          owner_type?: VehicleOwnerType
+          transporter_id?: string | null
+          supplier_id?: string | null
+          notes?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          company_id?: string
+          name?: string
+          id_series?: string | null
+          id_number?: string | null
+          phone?: string | null
+          owner_type?: VehicleOwnerType
+          transporter_id?: string | null
+          supplier_id?: string | null
+          notes?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      vehicle_drivers: {
+        Row: {
+          id: string
+          vehicle_id: string
+          driver_id: string
+          is_primary: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          vehicle_id: string
+          driver_id: string
+          is_primary?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          vehicle_id?: string
+          driver_id?: string
+          is_primary?: boolean
+          created_at?: string
+        }
+      }
     }
   }
 }
@@ -1009,6 +1139,9 @@ export type DismantlingOutput = Tables<'dismantling_outputs'>
 export type CashRegister = Tables<'cash_registers'>
 export type CashTransaction = Tables<'cash_transactions'>
 export type Employee = Tables<'employees'>
+export type Vehicle = Tables<'vehicles'>
+export type Driver = Tables<'drivers'>
+export type VehicleDriver = Tables<'vehicle_drivers'>
 
 // Extended types with relations
 export interface AcquisitionWithItems extends Acquisition {
@@ -1036,4 +1169,20 @@ export interface InventoryWithMaterial extends Inventory {
 
 export interface ProfileWithCompany extends Profile {
   company?: Company | null
+}
+
+export interface VehicleWithTransporter extends Vehicle {
+  transporter?: Transporter | null
+}
+
+export interface VehicleWithRelations extends Vehicle {
+  transporter?: Transporter | null
+  supplier?: Supplier | null
+  drivers?: Driver[]
+}
+
+export interface DriverWithRelations extends Driver {
+  transporter?: Transporter | null
+  supplier?: Supplier | null
+  vehicles?: Vehicle[]
 }

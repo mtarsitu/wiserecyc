@@ -23,3 +23,4 @@ export {
   TableCaption,
 } from './table'
 export { Dialog } from './dialog'
+export { Checkbox } from './checkbox'

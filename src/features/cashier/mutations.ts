@@ -236,3 +236,82 @@ export function useCreateTransactionFromModule() {
     },
   })
 }
+
+// ============================================
+// CASH TRANSFER MUTATION (Between registers)
+// ============================================
+
+export interface CreateCashTransferInput {
+  company_id: string
+  from_register_id: string
+  to_register_id: string
+  date: string
+  amount: number
+  description?: string
+  created_by?: string
+}
+
+export function useCreateCashTransfer() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: CreateCashTransferInput) => {
+      // Create two transactions: expense from source, income to destination
+      const transferDescription = input.description || 'Transfer între case'
+
+      // 1. Create expense transaction (from source register)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: expenseData, error: expenseError } = await (supabase as any)
+        .from('cash_transactions')
+        .insert({
+          company_id: input.company_id,
+          cash_register_id: input.from_register_id,
+          date: input.date,
+          type: 'expense',
+          amount: input.amount,
+          description: transferDescription,
+          source_type: 'manual',
+          source_id: null,
+          created_by: input.created_by || null,
+        })
+        .select()
+        .single()
+
+      if (expenseError) throw expenseError
+
+      // 2. Create income transaction (to destination register)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: incomeData, error: incomeError } = await (supabase as any)
+        .from('cash_transactions')
+        .insert({
+          company_id: input.company_id,
+          cash_register_id: input.to_register_id,
+          date: input.date,
+          type: 'income',
+          amount: input.amount,
+          description: transferDescription,
+          source_type: 'manual',
+          source_id: expenseData.id, // Link to the expense transaction
+          created_by: input.created_by || null,
+        })
+        .select()
+        .single()
+
+      if (incomeError) {
+        // Rollback: delete the expense transaction if income fails
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from('cash_transactions')
+          .delete()
+          .eq('id', expenseData.id)
+        throw incomeError
+      }
+
+      return { expense: expenseData as CashTransaction, income: incomeData as CashTransaction }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: cashierKeys.transactions(variables.company_id, variables.date) })
+      queryClient.invalidateQueries({ queryKey: cashierKeys.dailySummary(variables.company_id, variables.date) })
+    },
+  })
+}

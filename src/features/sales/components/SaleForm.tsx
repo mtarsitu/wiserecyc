@@ -6,6 +6,9 @@ import { clientsQueryOptions } from '@/features/clients/queries'
 import { materialsQueryOptions } from '@/features/materials/queries'
 import { cashRegistersQueryOptions } from '@/features/cashier/queries'
 import { availableInventoryQueryOptions } from '@/features/inventory/queries'
+import { transportersQueryOptions } from '@/features/transporters/queries'
+import { vehiclesQueryOptions } from '@/features/vehicles/queries'
+import { driversQueryOptions } from '@/features/drivers/queries'
 import { useCreateClient } from '@/features/clients/mutations'
 import { ClientForm } from '@/features/clients/components/ClientForm'
 import type { SaleWithDetails } from '../queries'
@@ -29,6 +32,9 @@ interface FormData {
   payment_method: PaymentMethod | null
   transport_type: TransportType | null
   transport_price: number
+  transporter_id: string | null
+  vehicle_id: string | null
+  driver_id: string | null
   scale_number: string
   notes: string
   status: SaleStatus
@@ -53,6 +59,9 @@ const initialFormData: FormData = {
   payment_method: 'bank',
   transport_type: 'intern',
   transport_price: 0,
+  transporter_id: null,
+  vehicle_id: null,
+  driver_id: null,
   scale_number: '',
   notes: '',
   status: 'pending',
@@ -76,6 +85,9 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
   const { data: materials = [] } = useQuery(materialsQueryOptions())
   const { data: cashRegisters = [] } = useQuery(cashRegistersQueryOptions(companyId))
   const { data: inventory = [] } = useQuery(availableInventoryQueryOptions(companyId))
+  const { data: transporters = [] } = useQuery(transportersQueryOptions(companyId))
+  const { data: vehicles = [] } = useQuery(vehiclesQueryOptions(companyId))
+  const { data: drivers = [] } = useQuery(driversQueryOptions(companyId))
   const createClient = useCreateClient()
 
   // Calculate available stock per material (only from 'curte' location)
@@ -140,9 +152,46 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
   ]
 
   const transportTypeOptions = [
-    { value: 'intern', label: 'Transport intern' },
-    { value: 'extern', label: 'Transport extern' },
+    { value: 'intern', label: 'Transport intern (flota proprie)' },
+    { value: 'extern', label: 'Transport extern (transportator)' },
   ]
+
+  const transporterOptions = useMemo(() =>
+    transporters.map(t => ({ value: t.id, label: t.name })),
+    [transporters]
+  )
+
+  // Filter vehicles based on transport type
+  const filteredVehicleOptions = useMemo(() => {
+    if (formData.transport_type === 'intern') {
+      // Own fleet vehicles
+      return vehicles
+        .filter(v => v.owner_type === 'own_fleet')
+        .map(v => ({ value: v.id, label: `${v.vehicle_number} - ${v.vehicle_type || 'Vehicul'}` }))
+    } else if (formData.transport_type === 'extern' && formData.transporter_id) {
+      // Transporter vehicles
+      return vehicles
+        .filter(v => v.owner_type === 'transporter' && v.transporter_id === formData.transporter_id)
+        .map(v => ({ value: v.id, label: `${v.vehicle_number} - ${v.vehicle_type || 'Vehicul'}` }))
+    }
+    return []
+  }, [vehicles, formData.transport_type, formData.transporter_id])
+
+  // Filter drivers based on transport type
+  const filteredDriverOptions = useMemo(() => {
+    if (formData.transport_type === 'intern') {
+      // Own fleet drivers
+      return drivers
+        .filter(d => d.owner_type === 'own_fleet')
+        .map(d => ({ value: d.id, label: d.name }))
+    } else if (formData.transport_type === 'extern' && formData.transporter_id) {
+      // Transporter drivers
+      return drivers
+        .filter(d => d.owner_type === 'transporter' && d.transporter_id === formData.transporter_id)
+        .map(d => ({ value: d.id, label: d.name }))
+    }
+    return []
+  }, [drivers, formData.transport_type, formData.transporter_id])
 
   const statusOptions = [
     { value: 'pending', label: 'In asteptare' },
@@ -158,6 +207,9 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
         payment_method: sale.payment_method,
         transport_type: sale.transport_type,
         transport_price: sale.transport_price,
+        transporter_id: sale.transporter_id || null,
+        vehicle_id: sale.vehicle_id || null,
+        driver_id: sale.driver_id || null,
         scale_number: sale.scale_number || '',
         notes: sale.notes || '',
         status: sale.status,
@@ -185,7 +237,31 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+
+    // Reset dependent fields when transport_type changes
+    if (name === 'transport_type') {
+      setFormData((prev) => ({
+        ...prev,
+        transport_type: value as TransportType,
+        transporter_id: null,
+        vehicle_id: null,
+        driver_id: null,
+      }))
+      return
+    }
+
+    // Reset vehicle and driver when transporter changes
+    if (name === 'transporter_id') {
+      setFormData((prev) => ({
+        ...prev,
+        transporter_id: value || null,
+        vehicle_id: null,
+        driver_id: null,
+      }))
+      return
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: value || null }))
   }
 
   const handleItemChange = (index: number, field: keyof SaleItemInput, value: string | number | null) => {
@@ -334,7 +410,7 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
         </div>
 
         {/* Transport info */}
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="transport_type">Tip transport</Label>
             <Select
@@ -346,6 +422,61 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
               placeholder="Selecteaza"
             />
           </div>
+
+          {formData.transport_type === 'extern' && (
+            <div className="space-y-2">
+              <Label htmlFor="transporter_id">Transportator</Label>
+              <Select
+                id="transporter_id"
+                name="transporter_id"
+                value={formData.transporter_id || ''}
+                onChange={handleChange}
+                options={transporterOptions}
+                placeholder="Selecteaza transportator"
+              />
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="vehicle_id">Vehicul</Label>
+            <Select
+              id="vehicle_id"
+              name="vehicle_id"
+              value={formData.vehicle_id || ''}
+              onChange={handleChange}
+              options={filteredVehicleOptions}
+              placeholder="Selecteaza vehicul"
+              disabled={formData.transport_type === 'extern' && !formData.transporter_id}
+            />
+            {filteredVehicleOptions.length === 0 && formData.transport_type && (
+              <p className="text-xs text-muted-foreground">
+                {formData.transport_type === 'intern'
+                  ? 'Nu exista vehicule in flota proprie'
+                  : 'Selecteaza un transportator'}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="driver_id">Sofer</Label>
+            <Select
+              id="driver_id"
+              name="driver_id"
+              value={formData.driver_id || ''}
+              onChange={handleChange}
+              options={filteredDriverOptions}
+              placeholder="Selecteaza sofer"
+              disabled={formData.transport_type === 'extern' && !formData.transporter_id}
+            />
+            {filteredDriverOptions.length === 0 && formData.transport_type && (
+              <p className="text-xs text-muted-foreground">
+                {formData.transport_type === 'intern'
+                  ? 'Nu exista soferi proprii'
+                  : 'Selecteaza un transportator'}
+              </p>
+            )}
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="transport_price">Cost transport (RON)</Label>
             <Input
@@ -358,6 +489,7 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
               onChange={handleChange}
             />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="scale_number">Nr. cantar</Label>
             <Input

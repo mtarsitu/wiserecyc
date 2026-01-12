@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Header } from '@/components/layout'
 import { Button, Card, CardContent, CardHeader, CardTitle, Dialog, Input } from '@/components/ui'
-import { Plus, Calendar, Banknote } from 'lucide-react'
+import { Plus, Calendar, Banknote, ArrowLeftRight } from 'lucide-react'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { useUIStore } from '@/stores/ui'
 import {
@@ -16,12 +16,14 @@ import {
   useDeleteCashRegister,
   useCreateCashTransaction,
   useDeleteCashTransaction,
+  useCreateCashTransfer,
 } from './mutations'
 import {
   CashRegisterCard,
   CashRegisterForm,
   TransactionForm,
   TransactionTable,
+  TransferForm,
 } from './components'
 import type { CashRegister, CashRegisterType } from '@/types/database'
 
@@ -48,6 +50,7 @@ export function CashierPage() {
   // UI Store
   const registerDialog = useUIStore((s) => s.getDialog('cashRegister'))
   const transactionDialog = useUIStore((s) => s.getDialog('cashTransaction'))
+  const transferDialog = useUIStore((s) => s.getDialog('cashTransfer'))
   const openDialog = useUIStore((s) => s.openDialog)
   const closeDialog = useUIStore((s) => s.closeDialog)
   
@@ -66,6 +69,7 @@ export function CashierPage() {
   const deleteRegister = useDeleteCashRegister()
   const createTransaction = useCreateCashTransaction()
   const deleteTransaction = useDeleteCashTransaction()
+  const createTransfer = useCreateCashTransfer()
 
   // Current editing register
   const editingRegister = useMemo(() => {
@@ -161,6 +165,26 @@ export function CashierPage() {
     }
   }
 
+  const handleTransferSubmit = async (data: {
+    from_register_id: string
+    to_register_id: string
+    amount: number
+    description: string
+  }) => {
+    try {
+      await createTransfer.mutateAsync({
+        company_id: companyId!,
+        date: selectedDate,
+        created_by: user?.id,
+        ...data,
+      })
+      closeDialog('cashTransfer')
+    } catch (error) {
+      console.error('Error creating transfer:', error)
+      alert('Eroare la efectuarea transferului: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    }
+  }
+
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' }).format(amount)
 
@@ -188,6 +212,15 @@ export function CashierPage() {
             <Button variant="outline" onClick={() => openDialog('cashRegister')}>
               <Plus className="mr-2 h-4 w-4" />
               Casa noua
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => openDialog('cashTransfer')}
+              disabled={registers.length < 2}
+              title={registers.length < 2 ? 'Trebuie minim 2 case pentru transfer' : 'Transfer între case'}
+            >
+              <ArrowLeftRight className="mr-2 h-4 w-4" />
+              Transfer
             </Button>
             <Button onClick={() => openDialog('cashTransaction')} disabled={registers.length === 0}>
               <Plus className="mr-2 h-4 w-4" />
@@ -326,6 +359,22 @@ export function CashierPage() {
           isLoading={createTransaction.isPending}
           onSubmit={handleTransactionSubmit}
           onCancel={() => closeDialog('cashTransaction')}
+        />
+      </Dialog>
+
+      {/* Transfer Dialog */}
+      <Dialog
+        open={transferDialog.isOpen}
+        onClose={() => closeDialog('cashTransfer')}
+        title="Transfer intre case"
+        maxWidth="md"
+      >
+        <TransferForm
+          registers={registers}
+          selectedDate={selectedDate}
+          isLoading={createTransfer.isPending}
+          onSubmit={handleTransferSubmit}
+          onCancel={() => closeDialog('cashTransfer')}
         />
       </Dialog>
     </div>
