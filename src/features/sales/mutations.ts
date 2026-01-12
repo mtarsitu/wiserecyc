@@ -23,6 +23,8 @@ interface CreateSaleInput {
   transport_type?: TransportType | null
   transport_price?: number
   transporter_id?: string | null
+  vehicle_id?: string | null
+  driver_id?: string | null
   scale_number?: string
   notes?: string
   status?: SaleStatus

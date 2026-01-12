@@ -1,16 +1,22 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button, Input, Label, Select, Dialog } from '@/components/ui'
-import { Plus, Trash2, Loader2, AlertTriangle } from 'lucide-react'
+import { Plus, Trash2, Loader2, AlertTriangle, Truck } from 'lucide-react'
 import { clientsQueryOptions } from '@/features/clients/queries'
 import { materialsQueryOptions } from '@/features/materials/queries'
 import { cashRegistersQueryOptions } from '@/features/cashier/queries'
 import { availableInventoryQueryOptions } from '@/features/inventory/queries'
 import { transportersQueryOptions } from '@/features/transporters/queries'
-import { vehiclesQueryOptions } from '@/features/vehicles/queries'
+import { vehiclesQueryOptions, findVehicleByNumber, type VehicleWithRelations } from '@/features/vehicles/queries'
 import { driversQueryOptions } from '@/features/drivers/queries'
 import { useCreateClient } from '@/features/clients/mutations'
+import { useCreateTransporter } from '@/features/transporters/mutations'
+import { useCreateVehicle } from '@/features/vehicles/mutations'
+import { useCreateDriver } from '@/features/drivers/mutations'
 import { ClientForm } from '@/features/clients/components/ClientForm'
+import { TransporterForm } from '@/features/transporters/components/TransporterForm'
+import { VehicleForm } from '@/features/vehicles/components/VehicleForm'
+import { DriverForm } from '@/features/drivers/components/DriverForm'
 import type { SaleWithDetails } from '../queries'
 import type { PaymentMethod, TransportType, SaleStatus, InsertTables } from '@/types/database'
 
@@ -34,6 +40,7 @@ interface FormData {
   transport_price: number
   transporter_id: string | null
   vehicle_id: string | null
+  vehicle_number: string
   driver_id: string | null
   scale_number: string
   notes: string
@@ -61,6 +68,7 @@ const initialFormData: FormData = {
   transport_price: 0,
   transporter_id: null,
   vehicle_id: null,
+  vehicle_number: '',
   driver_id: null,
   scale_number: '',
   notes: '',
@@ -80,6 +88,11 @@ interface SaleFormProps {
 export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: SaleFormProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [showClientDialog, setShowClientDialog] = useState(false)
+  const [showTransporterDialog, setShowTransporterDialog] = useState(false)
+  const [showVehicleDialog, setShowVehicleDialog] = useState(false)
+  const [showDriverDialog, setShowDriverDialog] = useState(false)
+  const [detectedVehicle, setDetectedVehicle] = useState<VehicleWithRelations | null>(null)
+  const [isDetectingVehicle, setIsDetectingVehicle] = useState(false)
 
   const { data: clients = [] } = useQuery(clientsQueryOptions(companyId))
   const { data: materials = [] } = useQuery(materialsQueryOptions())
@@ -89,6 +102,9 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
   const { data: vehicles = [] } = useQuery(vehiclesQueryOptions(companyId))
   const { data: drivers = [] } = useQuery(driversQueryOptions(companyId))
   const createClient = useCreateClient()
+  const createTransporter = useCreateTransporter()
+  const createVehicle = useCreateVehicle()
+  const createDriver = useCreateDriver()
 
   // Calculate available stock per material (only from 'curte' location)
   const availableStock = useMemo(() => {
@@ -209,6 +225,7 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
         transport_price: sale.transport_price,
         transporter_id: sale.transporter_id || null,
         vehicle_id: sale.vehicle_id || null,
+        vehicle_number: sale.vehicle?.vehicle_number || '',
         driver_id: sale.driver_id || null,
         scale_number: sale.scale_number || '',
         notes: sale.notes || '',
@@ -325,6 +342,104 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
     }
   }
 
+  // Auto-detect vehicle when vehicle number changes
+  const handleVehicleNumberChange = useCallback(async (vehicleNumber: string) => {
+    setFormData(prev => ({ ...prev, vehicle_number: vehicleNumber }))
+
+    if (vehicleNumber.length >= 3) {
+      setIsDetectingVehicle(true)
+      try {
+        const vehicle = await findVehicleByNumber(companyId, vehicleNumber)
+        if (vehicle) {
+          setDetectedVehicle(vehicle)
+          setFormData(prev => ({
+            ...prev,
+            vehicle_id: vehicle.id,
+            transporter_id: vehicle.transporter_id,
+            transport_type: vehicle.owner_type === 'own_fleet' ? 'intern' : 'extern',
+          }))
+        } else {
+          setDetectedVehicle(null)
+          setFormData(prev => ({ ...prev, vehicle_id: null }))
+        }
+      } catch (error) {
+        console.error('Error detecting vehicle:', error)
+        setDetectedVehicle(null)
+      }
+      setIsDetectingVehicle(false)
+    } else {
+      setDetectedVehicle(null)
+      setFormData(prev => ({ ...prev, vehicle_id: null }))
+    }
+  }, [companyId])
+
+  const handleTransporterSubmit = async (data: { name: string; cui: string; phone: string; email: string; vehicle_number: string; notes: string }) => {
+    try {
+      const newTransporter = await createTransporter.mutateAsync({
+        company_id: companyId,
+        ...data,
+      })
+      setFormData((prev) => ({ ...prev, transporter_id: newTransporter.id }))
+      setShowTransporterDialog(false)
+    } catch (error) {
+      console.error('Error creating transporter:', error)
+      alert('Eroare la crearea transportatorului: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    }
+  }
+
+  const handleVehicleSubmit = async (data: {
+    vehicle_number: string
+    vehicle_type: string
+    owner_type: 'own_fleet' | 'transporter' | 'supplier'
+    transporter_id: string | null
+    supplier_id: string | null
+    driver_name: string
+    notes: string
+    has_transport_license: boolean
+    transport_license_number: string | null
+    transport_license_expiry: string | null
+  }) => {
+    try {
+      const newVehicle = await createVehicle.mutateAsync({
+        company_id: companyId,
+        ...data,
+      })
+      setFormData((prev) => ({
+        ...prev,
+        vehicle_id: newVehicle.id,
+        vehicle_number: newVehicle.vehicle_number,
+      }))
+      setDetectedVehicle(null)
+      setShowVehicleDialog(false)
+    } catch (error) {
+      console.error('Error creating vehicle:', error)
+      alert('Eroare la crearea vehiculului: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    }
+  }
+
+  const handleDriverSubmit = async (data: {
+    name: string
+    id_series: string
+    id_number: string
+    phone: string
+    owner_type: 'own_fleet' | 'transporter' | 'supplier'
+    transporter_id: string | null
+    supplier_id: string | null
+    notes: string
+  }) => {
+    try {
+      const newDriver = await createDriver.mutateAsync({
+        company_id: companyId,
+        ...data,
+      })
+      setFormData((prev) => ({ ...prev, driver_id: newDriver.id }))
+      setShowDriverDialog(false)
+    } catch (error) {
+      console.error('Error creating driver:', error)
+      alert('Eroare la crearea soferului: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSubmit({
@@ -409,95 +524,165 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
           </div>
         </div>
 
-        {/* Transport info */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="transport_type">Tip transport</Label>
-            <Select
-              id="transport_type"
-              name="transport_type"
-              value={formData.transport_type || ''}
-              onChange={handleChange}
-              options={transportTypeOptions}
-              placeholder="Selecteaza"
-            />
+        {/* Transport section */}
+        <div className="space-y-4 rounded-lg border p-4 bg-muted/30">
+          <div className="flex items-center gap-2 mb-2">
+            <Truck className="h-5 w-5 text-primary" />
+            <Label className="text-base font-semibold">Transport</Label>
           </div>
 
-          {formData.transport_type === 'extern' && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
-              <Label htmlFor="transporter_id">Transportator</Label>
+              <Label htmlFor="transport_type">Tip transport</Label>
               <Select
-                id="transporter_id"
-                name="transporter_id"
-                value={formData.transporter_id || ''}
-                onChange={handleChange}
-                options={transporterOptions}
-                placeholder="Selecteaza transportator"
+                id="transport_type"
+                value={formData.transport_type || ''}
+                onChange={(e) => {
+                  const value = e.target.value as TransportType
+                  setFormData(prev => ({
+                    ...prev,
+                    transport_type: value,
+                    transporter_id: value === 'intern' ? null : prev.transporter_id,
+                    vehicle_id: null,
+                    vehicle_number: '',
+                    driver_id: null,
+                  }))
+                }}
+                options={transportTypeOptions}
               />
             </div>
-          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="vehicle_id">Vehicul</Label>
-            <Select
-              id="vehicle_id"
-              name="vehicle_id"
-              value={formData.vehicle_id || ''}
-              onChange={handleChange}
-              options={filteredVehicleOptions}
-              placeholder="Selecteaza vehicul"
-              disabled={formData.transport_type === 'extern' && !formData.transporter_id}
-            />
-            {filteredVehicleOptions.length === 0 && formData.transport_type && (
-              <p className="text-xs text-muted-foreground">
-                {formData.transport_type === 'intern'
-                  ? 'Nu exista vehicule in flota proprie'
-                  : 'Selecteaza un transportator'}
-              </p>
+            {formData.transport_type === 'extern' && (
+              <div className="space-y-2">
+                <Label htmlFor="transporter_id">Transportator</Label>
+                <div className="flex gap-2">
+                  <Select
+                    id="transporter_id"
+                    value={formData.transporter_id || ''}
+                    onChange={(e) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        transporter_id: e.target.value || null,
+                        vehicle_id: null,
+                        vehicle_number: '',
+                        driver_id: null,
+                      }))
+                    }}
+                    options={transporterOptions}
+                    placeholder="Selecteaza transportator"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowTransporterDialog(true)}
+                    title="Adauga transportator nou"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             )}
+
+            <div className="space-y-2">
+              <Label htmlFor="vehicle_number">Nr. inmatriculare</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="vehicle_number"
+                    value={formData.vehicle_number}
+                    onChange={(e) => handleVehicleNumberChange(e.target.value.toUpperCase())}
+                    placeholder="ex: B-123-ABC"
+                    className={detectedVehicle ? 'border-green-500' : ''}
+                  />
+                  {isDetectingVehicle && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowVehicleDialog(true)}
+                  title="Adauga vehicul nou"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {detectedVehicle && (
+                <p className="text-xs text-green-600">
+                  Vehicul detectat: {detectedVehicle.vehicle_type || 'N/A'}
+                  {detectedVehicle.transporter?.name ? ` (${detectedVehicle.transporter.name})` : ''}
+                </p>
+              )}
+              {!detectedVehicle && filteredVehicleOptions.length > 0 && (
+                <Select
+                  id="vehicle_id"
+                  value={formData.vehicle_id || ''}
+                  onChange={(e) => {
+                    const vehicle = vehicles.find(v => v.id === e.target.value)
+                    setFormData(prev => ({
+                      ...prev,
+                      vehicle_id: e.target.value || null,
+                      vehicle_number: vehicle?.vehicle_number || prev.vehicle_number,
+                    }))
+                  }}
+                  options={filteredVehicleOptions}
+                  placeholder="Sau selecteaza vehicul"
+                />
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="driver_id">Sofer</Label>
+              <div className="flex gap-2">
+                <Select
+                  id="driver_id"
+                  value={formData.driver_id || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, driver_id: e.target.value || null }))}
+                  options={filteredDriverOptions}
+                  placeholder="Selecteaza sofer"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowDriverDialog(true)}
+                  title="Adauga sofer nou"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="driver_id">Sofer</Label>
-            <Select
-              id="driver_id"
-              name="driver_id"
-              value={formData.driver_id || ''}
-              onChange={handleChange}
-              options={filteredDriverOptions}
-              placeholder="Selecteaza sofer"
-              disabled={formData.transport_type === 'extern' && !formData.transporter_id}
-            />
-            {filteredDriverOptions.length === 0 && formData.transport_type && (
-              <p className="text-xs text-muted-foreground">
-                {formData.transport_type === 'intern'
-                  ? 'Nu exista soferi proprii'
-                  : 'Selecteaza un transportator'}
-              </p>
-            )}
-          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="transport_price">Cost transport (RON)</Label>
+              <Input
+                id="transport_price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.transport_price || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, transport_price: Number(e.target.value) || 0 }))}
+                placeholder="0.00"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="transport_price">Cost transport (RON)</Label>
-            <Input
-              id="transport_price"
-              name="transport_price"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.transport_price || ''}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="scale_number">Nr. cantar</Label>
-            <Input
-              id="scale_number"
-              name="scale_number"
-              value={formData.scale_number}
-              onChange={handleChange}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="scale_number">Nr. cantar</Label>
+              <Input
+                id="scale_number"
+                name="scale_number"
+                value={formData.scale_number}
+                onChange={handleChange}
+              />
+            </div>
           </div>
         </div>
 
@@ -692,6 +877,56 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
           isLoading={createClient.isPending}
           onSubmit={handleClientSubmit}
           onCancel={() => setShowClientDialog(false)}
+        />
+      </Dialog>
+
+      {/* Transporter Dialog */}
+      <Dialog
+        open={showTransporterDialog}
+        onClose={() => setShowTransporterDialog(false)}
+        title="Adauga transportator"
+        maxWidth="md"
+      >
+        <TransporterForm
+          isLoading={createTransporter.isPending}
+          onSubmit={handleTransporterSubmit}
+          onCancel={() => setShowTransporterDialog(false)}
+        />
+      </Dialog>
+
+      {/* Vehicle Dialog */}
+      <Dialog
+        open={showVehicleDialog}
+        onClose={() => setShowVehicleDialog(false)}
+        title="Adauga vehicul"
+        maxWidth="lg"
+      >
+        <VehicleForm
+          companyId={companyId}
+          defaultOwnerType={formData.transport_type === 'intern' ? 'own_fleet' : 'transporter'}
+          defaultTransporterId={formData.transporter_id}
+          simplified
+          isLoading={createVehicle.isPending}
+          onSubmit={handleVehicleSubmit}
+          onCancel={() => setShowVehicleDialog(false)}
+        />
+      </Dialog>
+
+      {/* Driver Dialog */}
+      <Dialog
+        open={showDriverDialog}
+        onClose={() => setShowDriverDialog(false)}
+        title="Adauga sofer"
+        maxWidth="lg"
+      >
+        <DriverForm
+          companyId={companyId}
+          defaultOwnerType={formData.transport_type === 'intern' ? 'own_fleet' : 'transporter'}
+          defaultTransporterId={formData.transporter_id}
+          simplified
+          isLoading={createDriver.isPending}
+          onSubmit={handleDriverSubmit}
+          onCancel={() => setShowDriverDialog(false)}
         />
       </Dialog>
     </>

@@ -1,9 +1,11 @@
 import { queryOptions } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import type { Acquisition, AcquisitionItem, Supplier, Material } from '@/types/database'
+import type { Acquisition, AcquisitionItem, Supplier, Material, Vehicle, Driver } from '@/types/database'
 
 export type AcquisitionWithDetails = Acquisition & {
   supplier: Supplier | null
+  vehicle: Vehicle | null
+  driver: Driver | null
   items: (AcquisitionItem & { material: Material })[]
 }
 
@@ -25,6 +27,8 @@ export const acquisitionsQueryOptions = (companyId: string | null | undefined) =
         .select(`
           *,
           supplier:suppliers(*),
+          vehicle:vehicles(*),
+          driver:drivers(*),
           items:acquisition_items(
             *,
             material:materials(*)
@@ -51,6 +55,8 @@ export const acquisitionDetailQueryOptions = (id: string | null | undefined) =>
         .select(`
           *,
           supplier:suppliers(*),
+          vehicle:vehicles(*),
+          driver:drivers(*),
           items:acquisition_items(
             *,
             material:materials(*)

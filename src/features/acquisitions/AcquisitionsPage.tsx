@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
 import { Header } from '@/components/layout'
 import { Button, Card, CardContent, CardHeader, CardTitle, Dialog, Input, Label } from '@/components/ui'
 import { Plus, EyeOff, Eye } from 'lucide-react'
@@ -112,6 +113,10 @@ export function AcquisitionsPage() {
     total_amount: number
     info: string
     notes: string
+    vehicle_id: string | null
+    driver_id: string | null
+    transport_type: string
+    transport_price: number
     items: {
       id?: string
       material_id: string
@@ -138,6 +143,10 @@ export function AcquisitionsPage() {
           total_amount: data.total_amount,
           info: data.info,
           notes: data.notes,
+          vehicle_id: data.vehicle_id,
+          driver_id: data.driver_id,
+          transport_type: data.transport_type,
+          transport_price: data.transport_price,
           items: data.items,
         })
         acquisitionId = editingAcquisition.id
@@ -155,6 +164,10 @@ export function AcquisitionsPage() {
           total_amount: data.total_amount,
           info: data.info,
           notes: data.notes,
+          vehicle_id: data.vehicle_id,
+          driver_id: data.driver_id,
+          transport_type: data.transport_type,
+          transport_price: data.transport_price,
           items: data.items,
         })
         acquisitionId = newAcquisition.id
@@ -185,33 +198,28 @@ export function AcquisitionsPage() {
 
       // Open ticket print dialog after successful save
       if (acquisitionId && company) {
-        // Find the saved acquisition to get full details
-        const savedAcquisition = acquisitions.find(a => a.id === acquisitionId) || {
-          id: acquisitionId,
-          company_id: companyId!,
-          date: data.date,
-          supplier_id: data.supplier_id || null,
-          supplier: null,
-          receipt_number: data.receipt_number,
-          payment_status: data.payment_status,
-          environment_fund: data.environment_fund,
-          total_amount: data.total_amount,
-          info: data.info,
-          notes: data.notes,
-          created_by: user?.id || null,
-          created_at: new Date().toISOString(),
-          items: data.items.map(item => ({
-            ...item,
-            id: item.id || '',
-            acquisition_id: acquisitionId,
-            created_at: new Date().toISOString(),
-            material: { id: item.material_id, name: 'Material', unit: 'kg', is_active: true, created_at: '' }
-          }))
-        } as AcquisitionWithDetails
+        // Fetch the full acquisition with all relations (vehicle, driver, supplier, items)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: savedAcquisition } = await (supabase as any)
+          .from('acquisitions')
+          .select(`
+            *,
+            supplier:suppliers(*),
+            vehicle:vehicles(*),
+            driver:drivers(*),
+            items:acquisition_items(
+              *,
+              material:materials(*)
+            )
+          `)
+          .eq('id', acquisitionId)
+          .single()
 
-        const operatorName = profile?.full_name || profile?.email || 'Administrator'
-        const ticketData = acquisitionToTicketData(savedAcquisition, company, operatorName)
-        openTicketDialog(ticketData)
+        if (savedAcquisition) {
+          const operatorName = profile?.full_name || profile?.email || 'Administrator'
+          const ticketData = acquisitionToTicketData(savedAcquisition as AcquisitionWithDetails, company, operatorName)
+          openTicketDialog(ticketData)
+        }
       }
     } catch (error) {
       console.error('Error saving acquisition:', error)

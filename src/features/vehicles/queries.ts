@@ -150,9 +150,9 @@ export async function findVehicleByNumber(companyId: string, vehicleNumber: stri
       supplier:suppliers(*)
     `)
     .eq('company_id', companyId)
-    .ilike('vehicle_number', normalizedNumber)
+    .ilike('vehicle_number', `%${normalizedNumber}%`)
     .eq('is_active', true)
-    .single()
+    .maybeSingle()
 
   if (error || !data) return null
   return data as VehicleWithRelations

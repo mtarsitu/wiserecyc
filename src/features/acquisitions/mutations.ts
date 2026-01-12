@@ -27,6 +27,10 @@ interface CreateAcquisitionInput {
   info?: string
   notes?: string
   created_by?: string
+  vehicle_id?: string | null
+  driver_id?: string | null
+  transport_type?: string
+  transport_price?: number
   items: AcquisitionItemInput[]
 }
 

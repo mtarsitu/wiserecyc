@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
 import { Header } from '@/components/layout'
 import { Button, Card, CardContent, CardHeader, CardTitle, Dialog } from '@/components/ui'
 import { Plus } from 'lucide-react'
@@ -66,6 +67,8 @@ export function SalesPage() {
     payment_method: PaymentMethod | null
     transport_type: TransportType | null
     transport_price: number
+    vehicle_id: string | null
+    driver_id: string | null
     scale_number: string
     notes: string
     status: SaleStatus
@@ -94,6 +97,8 @@ export function SalesPage() {
           payment_method: data.payment_method,
           transport_type: data.transport_type,
           transport_price: data.transport_price,
+          vehicle_id: data.vehicle_id,
+          driver_id: data.driver_id,
           scale_number: data.scale_number,
           notes: data.notes,
           status: data.status,
@@ -110,6 +115,8 @@ export function SalesPage() {
           payment_method: data.payment_method,
           transport_type: data.transport_type,
           transport_price: data.transport_price,
+          vehicle_id: data.vehicle_id,
+          driver_id: data.driver_id,
           scale_number: data.scale_number,
           notes: data.notes,
           status: data.status,
@@ -144,33 +151,49 @@ export function SalesPage() {
 
       // Open ticket print dialog after successful save
       if (saleId && company) {
-        // Find the saved sale to get full details
-        const savedSale = sales.find(s => s.id === saleId) || {
-          id: saleId,
-          company_id: companyId!,
-          date: data.date,
-          client_id: data.client_id || null,
-          client: null,
-          payment_method: data.payment_method,
-          transport_type: data.transport_type,
-          transport_price: data.transport_price,
-          scale_number: data.scale_number,
-          notes: data.notes,
-          status: data.status,
-          total_amount: data.total_amount,
-          created_by: user?.id || null,
-          created_at: new Date().toISOString(),
-          items: data.items.map(item => ({
-            ...item,
-            id: item.id || '',
-            sale_id: saleId,
-            created_at: new Date().toISOString(),
-            material: { id: item.material_id, name: 'Material', unit: 'kg', is_active: true, created_at: '' }
-          }))
-        } as SaleWithDetails
+        // Fetch the full sale with relations (no FK joins for vehicle/driver yet)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: savedSale } = await (supabase as any)
+          .from('sales')
+          .select(`
+            *,
+            client:clients(*),
+            transporter:transporters(*),
+            items:sale_items(
+              *,
+              material:materials(*)
+            )
+          `)
+          .eq('id', saleId)
+          .single()
 
-        const ticketData = saleToTicketData(savedSale, company)
-        openTicketDialog(ticketData)
+        if (savedSale) {
+          // Fetch vehicle and driver separately since FK constraints may not exist yet
+          let vehicle = null
+          let driver = null
+
+          if (savedSale.vehicle_id) {
+            const { data: v } = await supabase
+              .from('vehicles')
+              .select('*')
+              .eq('id', savedSale.vehicle_id)
+              .single()
+            vehicle = v
+          }
+
+          if (savedSale.driver_id) {
+            const { data: d } = await supabase
+              .from('drivers')
+              .select('*')
+              .eq('id', savedSale.driver_id)
+              .single()
+            driver = d
+          }
+
+          const saleWithRelations = { ...savedSale, vehicle, driver } as SaleWithDetails
+          const ticketData = saleToTicketData(saleWithRelations, company)
+          openTicketDialog(ticketData)
+        }
       }
     } catch (error) {
       console.error('Error saving sale:', error)

@@ -9,6 +9,12 @@ interface DriverFormProps {
   companyId: string
   driver?: (Driver & { transporter?: Transporter | null; supplier?: Supplier | null }) | null
   isLoading?: boolean
+  /** Pre-set owner type for quick-add from forms */
+  defaultOwnerType?: VehicleOwnerType
+  /** Pre-set transporter ID when adding from extern transport */
+  defaultTransporterId?: string | null
+  /** Hide owner type selector for simplified quick-add */
+  simplified?: boolean
   onSubmit: (data: {
     name: string
     id_series: string
@@ -26,6 +32,9 @@ export function DriverForm({
   companyId,
   driver,
   isLoading,
+  defaultOwnerType,
+  defaultTransporterId,
+  simplified = false,
   onSubmit,
   onCancel,
 }: DriverFormProps) {
@@ -33,8 +42,8 @@ export function DriverForm({
   const [idSeries, setIdSeries] = useState('')
   const [idNumber, setIdNumber] = useState('')
   const [phone, setPhone] = useState('')
-  const [ownerType, setOwnerType] = useState<VehicleOwnerType>('own_fleet')
-  const [transporterId, setTransporterId] = useState('')
+  const [ownerType, setOwnerType] = useState<VehicleOwnerType>(defaultOwnerType || 'own_fleet')
+  const [transporterId, setTransporterId] = useState(defaultTransporterId || '')
   const [supplierId, setSupplierId] = useState('')
   const [notes, setNotes] = useState('')
 
@@ -55,6 +64,19 @@ export function DriverForm({
       setNotes(driver.notes || '')
     }
   }, [driver])
+
+  // Update from defaults when they change (for quick-add mode)
+  useEffect(() => {
+    if (!driver && defaultOwnerType) {
+      setOwnerType(defaultOwnerType)
+    }
+  }, [driver, defaultOwnerType])
+
+  useEffect(() => {
+    if (!driver && defaultTransporterId) {
+      setTransporterId(defaultTransporterId)
+    }
+  }, [driver, defaultTransporterId])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -157,17 +179,19 @@ export function DriverForm({
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="owner_type">Tip angajare *</Label>
-        <Select
-          id="owner_type"
-          value={ownerType}
-          onChange={(e) => handleOwnerTypeChange(e.target.value)}
-          options={ownerTypeOptions}
-        />
-      </div>
+      {!simplified && (
+        <div className="space-y-2">
+          <Label htmlFor="owner_type">Tip angajare *</Label>
+          <Select
+            id="owner_type"
+            value={ownerType}
+            onChange={(e) => handleOwnerTypeChange(e.target.value)}
+            options={ownerTypeOptions}
+          />
+        </div>
+      )}
 
-      {ownerType === 'transporter' && (
+      {ownerType === 'transporter' && !simplified && (
         <div className="space-y-2">
           <Label htmlFor="transporter">Transportator *</Label>
           <Select
@@ -185,7 +209,7 @@ export function DriverForm({
         </div>
       )}
 
-      {ownerType === 'supplier' && (
+      {ownerType === 'supplier' && !simplified && (
         <div className="space-y-2">
           <Label htmlFor="supplier">Furnizor *</Label>
           <Select

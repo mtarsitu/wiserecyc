@@ -156,9 +156,6 @@ function getTimeWithOffset(baseTime: string | undefined, offsetMinutes: number):
 
 // Extended Acquisition type with new weighing fields
 type ExtendedAcquisition = AcquisitionWithDetails & {
-  vehicle_number?: string | null
-  vehicle_config?: string | null
-  transporter_name?: string | null
   delegate_name?: string | null
   aviz_number?: string | null
   weighing_type?: string | null
@@ -215,10 +212,10 @@ export function acquisitionToTicketData(
     // New weighing ticket fields
     generatedBy: operatorName || extAcq.operator_name || 'operator',
     weighedBy: operatorName || extAcq.operator_name || 'operator',
-    vehicleNumber: extAcq.vehicle_number || null,
-    vehicleConfig: extAcq.vehicle_config || null,
-    transporterName: extAcq.transporter_name || null,
-    delegateName: extAcq.delegate_name || null,
+    vehicleNumber: acquisition.vehicle?.vehicle_number || null,
+    vehicleConfig: acquisition.vehicle?.vehicle_type || null,
+    transporterName: null, // TODO: Add transporter FK to acquisitions
+    delegateName: acquisition.driver?.name || extAcq.delegate_name || null,
     avizNumber: extAcq.aviz_number || null,
     weighingType: extAcq.weighing_type || 'Statica',
     operatorName: operatorName || extAcq.operator_name || 'Administrator',
@@ -295,10 +292,10 @@ export function saleToTicketData(
     // New weighing ticket fields
     generatedBy: operatorName || extSale.operator_name || 'operator',
     weighedBy: operatorName || extSale.operator_name || 'operator',
-    vehicleNumber: extSale.vehicle_number || sale.transporter?.vehicle_number || null,
-    vehicleConfig: extSale.vehicle_config || null,
+    vehicleNumber: sale.vehicle?.vehicle_number || extSale.vehicle_number || sale.transporter?.vehicle_number || null,
+    vehicleConfig: sale.vehicle?.vehicle_type || extSale.vehicle_config || null,
     transporterName: transporterName,
-    delegateName: extSale.delegate_name || null,
+    delegateName: sale.driver?.name || extSale.delegate_name || null,
     avizNumber: extSale.aviz_number || null,
     weighingType: extSale.weighing_type || 'Statica',
     operatorName: operatorName || extSale.operator_name || 'Administrator',

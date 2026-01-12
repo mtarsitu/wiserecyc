@@ -1,10 +1,12 @@
 import { queryOptions } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import type { Sale, SaleItem, Client, Transporter, Material } from '@/types/database'
+import type { Sale, SaleItem, Client, Transporter, Material, Vehicle, Driver } from '@/types/database'
 
 export type SaleWithDetails = Sale & {
   client: Client | null
   transporter: Transporter | null
+  vehicle: Vehicle | null
+  driver: Driver | null
   items: (SaleItem & { material: Material })[]
 }
 
@@ -36,7 +38,36 @@ export const salesQueryOptions = (companyId: string | null | undefined) =>
         .order('date', { ascending: false })
 
       if (error) throw error
-      return data as SaleWithDetails[]
+
+      // Fetch vehicle and driver separately since FK constraints may not exist yet
+      const salesWithRelations = await Promise.all(
+        (data as SaleWithDetails[]).map(async (sale) => {
+          let vehicle = null
+          let driver = null
+
+          if (sale.vehicle_id) {
+            const { data: v } = await supabase
+              .from('vehicles')
+              .select('*')
+              .eq('id', sale.vehicle_id)
+              .single()
+            vehicle = v
+          }
+
+          if (sale.driver_id) {
+            const { data: d } = await supabase
+              .from('drivers')
+              .select('*')
+              .eq('id', sale.driver_id)
+              .single()
+            driver = d
+          }
+
+          return { ...sale, vehicle, driver }
+        })
+      )
+
+      return salesWithRelations as SaleWithDetails[]
     },
     enabled: !!companyId,
   })
@@ -63,7 +94,30 @@ export const saleDetailQueryOptions = (id: string | null | undefined) =>
         .single()
 
       if (error) throw error
-      return data as SaleWithDetails
+
+      // Fetch vehicle and driver separately since FK constraints may not exist yet
+      let vehicle = null
+      let driver = null
+
+      if (data.vehicle_id) {
+        const { data: v } = await supabase
+          .from('vehicles')
+          .select('*')
+          .eq('id', data.vehicle_id)
+          .single()
+        vehicle = v
+      }
+
+      if (data.driver_id) {
+        const { data: d } = await supabase
+          .from('drivers')
+          .select('*')
+          .eq('id', data.driver_id)
+          .single()
+        driver = d
+      }
+
+      return { ...data, vehicle, driver } as SaleWithDetails
     },
     enabled: !!id,
   })

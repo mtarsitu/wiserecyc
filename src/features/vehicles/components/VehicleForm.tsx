@@ -9,6 +9,12 @@ interface VehicleFormProps {
   companyId: string
   vehicle?: (Vehicle & { transporter?: Transporter | null; supplier?: Supplier | null }) | null
   isLoading?: boolean
+  /** Pre-set owner type for quick-add from forms */
+  defaultOwnerType?: VehicleOwnerType
+  /** Pre-set transporter ID when adding from extern transport */
+  defaultTransporterId?: string | null
+  /** Hide owner type selector for simplified quick-add */
+  simplified?: boolean
   onSubmit: (data: {
     vehicle_number: string
     vehicle_type: string
@@ -28,13 +34,16 @@ export function VehicleForm({
   companyId,
   vehicle,
   isLoading,
+  defaultOwnerType,
+  defaultTransporterId,
+  simplified = false,
   onSubmit,
   onCancel,
 }: VehicleFormProps) {
   const [vehicleNumber, setVehicleNumber] = useState('')
   const [vehicleType, setVehicleType] = useState('')
-  const [ownerType, setOwnerType] = useState<VehicleOwnerType>('own_fleet')
-  const [transporterId, setTransporterId] = useState('')
+  const [ownerType, setOwnerType] = useState<VehicleOwnerType>(defaultOwnerType || 'own_fleet')
+  const [transporterId, setTransporterId] = useState(defaultTransporterId || '')
   const [supplierId, setSupplierId] = useState('')
   const [driverName, setDriverName] = useState('')
   const [notes, setNotes] = useState('')
@@ -61,6 +70,19 @@ export function VehicleForm({
       setTransportLicenseExpiry(vehicle.transport_license_expiry || '')
     }
   }, [vehicle])
+
+  // Update from defaults when they change (for quick-add mode)
+  useEffect(() => {
+    if (!vehicle && defaultOwnerType) {
+      setOwnerType(defaultOwnerType)
+    }
+  }, [vehicle, defaultOwnerType])
+
+  useEffect(() => {
+    if (!vehicle && defaultTransporterId) {
+      setTransporterId(defaultTransporterId)
+    }
+  }, [vehicle, defaultTransporterId])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -151,17 +173,19 @@ export function VehicleForm({
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="owner_type">Tip proprietate *</Label>
-        <Select
-          id="owner_type"
-          value={ownerType}
-          onChange={(e) => handleOwnerTypeChange(e.target.value)}
-          options={ownerTypeOptions}
-        />
-      </div>
+      {!simplified && (
+        <div className="space-y-2">
+          <Label htmlFor="owner_type">Tip proprietate *</Label>
+          <Select
+            id="owner_type"
+            value={ownerType}
+            onChange={(e) => handleOwnerTypeChange(e.target.value)}
+            options={ownerTypeOptions}
+          />
+        </div>
+      )}
 
-      {ownerType === 'transporter' && (
+      {ownerType === 'transporter' && !simplified && (
         <div className="space-y-2">
           <Label htmlFor="transporter">Transportator *</Label>
           <Select
@@ -179,7 +203,7 @@ export function VehicleForm({
         </div>
       )}
 
-      {ownerType === 'supplier' && (
+      {ownerType === 'supplier' && !simplified && (
         <div className="space-y-2">
           <Label htmlFor="supplier">Furnizor *</Label>
           <Select
