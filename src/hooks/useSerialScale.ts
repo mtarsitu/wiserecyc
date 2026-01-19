@@ -61,16 +61,51 @@ function parseScaleReading(raw: string): ScaleReading | null {
   const trimmed = raw.trim()
   if (!trimmed) return null
 
-  // Common scale output formats:
-  // "  12.50 kg" or "12.50kg" or "ST,GS,  12.50, kg" or "+  12.50 kg"
-  // Some scales send: "N  +    12.50 kg" (N=Net, G=Gross)
+  // Format 1: CSV format like "1,ST,       100,      0,kg" or "     0,kg"
+  // Split by comma and look for the weight value
+  if (trimmed.includes(',')) {
+    const parts = trimmed.split(',').map(p => p.trim())
 
-  // Try to extract number and unit
+    // Look for numeric value and unit
+    let weightValue: number | null = null
+    let unit = 'kg'
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i]
+
+      // Check if this part is "kg", "g", etc.
+      if (/^(kg|g|lb|oz|t)$/i.test(part)) {
+        unit = part.toLowerCase()
+        continue
+      }
+
+      // Check if this is a numeric value (possibly with spaces)
+      const numMatch = part.match(/^-?\s*(\d+(?:[.,]\d+)?)\s*$/)
+      if (numMatch) {
+        const num = parseFloat(numMatch[1].replace(',', '.'))
+        if (!isNaN(num)) {
+          // Keep the largest number as weight (skip line numbers like "1")
+          if (weightValue === null || num > weightValue) {
+            weightValue = num
+          }
+        }
+      }
+    }
+
+    if (weightValue !== null) {
+      return {
+        value: weightValue,
+        unit,
+        timestamp: new Date(),
+        raw: trimmed,
+      }
+    }
+  }
+
+  // Format 2: Simple format like "  12.50 kg" or "12.50kg" or "+  12.50 kg"
   const patterns = [
     // Pattern: optional prefix, number with optional decimals, unit
     /[+-]?\s*(\d+(?:[.,]\d+)?)\s*(kg|g|lb|oz|t)?/i,
-    // Pattern for scales with comma as decimal separator
-    /[+-]?\s*(\d+(?:,\d+)?)\s*(kg|g|lb|oz|t)?/i,
   ]
 
   for (const pattern of patterns) {
@@ -113,9 +148,6 @@ export function useSerialScale(options: UseSerialScaleOptions = {}): UseSerialSc
     // Accumulate data in buffer
     bufferRef.current += data
 
-    // DEBUG: Log raw data received
-    console.log('[Scale RAW]:', JSON.stringify(data))
-
     // Process complete lines (split by newline or carriage return)
     const lines = bufferRef.current.split(/[\r\n]+/)
 
@@ -123,14 +155,7 @@ export function useSerialScale(options: UseSerialScaleOptions = {}): UseSerialSc
     bufferRef.current = lines.pop() || ''
 
     for (const line of lines) {
-      // DEBUG: Log each complete line
-      console.log('[Scale LINE]:', JSON.stringify(line))
-
       const reading = parseScaleReading(line)
-
-      // DEBUG: Log parsed result
-      console.log('[Scale PARSED]:', reading)
-
       if (reading) {
         setLastReading(reading)
         onReading?.(reading)

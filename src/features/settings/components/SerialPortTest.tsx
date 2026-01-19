@@ -148,10 +148,6 @@ export function SerialPortTest() {
                 // Keep only last 100 entries
                 return newData.slice(-100)
               })
-
-              // Also log to browser console
-              console.log('[Scale RAW TEXT]:', JSON.stringify(text))
-              console.log('[Scale HEX]:', hexBytes)
             }
           }
         } catch (err) {
