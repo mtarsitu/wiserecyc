@@ -108,6 +108,9 @@ interface AcquisitionFormProps {
   onCancel: () => void
 }
 
+// Password for hidden options
+const HIDDEN_OPTIONS_PASSWORD = '1234'
+
 export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, onCancel }: AcquisitionFormProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [showSupplierDialog, setShowSupplierDialog] = useState(false)
@@ -115,6 +118,9 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
   const [showVehicleDialog, setShowVehicleDialog] = useState(false)
   const [showDriverDialog, setShowDriverDialog] = useState(false)
   const [showHiddenOptions, setShowHiddenOptions] = useState(false)
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false)
+  const [passwordInput, setPasswordInput] = useState('')
+  const [passwordError, setPasswordError] = useState(false)
   const [detectedVehicle, setDetectedVehicle] = useState<VehicleWithRelations | null>(null)
   const [isDetectingVehicle, setIsDetectingVehicle] = useState(false)
 
@@ -126,9 +132,28 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'h' || e.key === 'H')) {
       e.preventDefault()
       e.stopPropagation()
-      setShowHiddenOptions(prev => !prev)
+      if (showHiddenOptions) {
+        // If already showing, just hide
+        setShowHiddenOptions(false)
+      } else {
+        // Show password dialog
+        setShowPasswordDialog(true)
+        setPasswordInput('')
+        setPasswordError(false)
+      }
     }
-  }, [])
+  }, [showHiddenOptions])
+
+  const handlePasswordSubmit = () => {
+    if (passwordInput === HIDDEN_OPTIONS_PASSWORD) {
+      setShowHiddenOptions(true)
+      setShowPasswordDialog(false)
+      setPasswordInput('')
+      setPasswordError(false)
+    } else {
+      setPasswordError(true)
+    }
+  }
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
@@ -1171,6 +1196,63 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
           onSubmit={handleDriverSubmit}
           onCancel={() => setShowDriverDialog(false)}
         />
+      </Dialog>
+
+      {/* Password Dialog for Hidden Options */}
+      <Dialog
+        open={showPasswordDialog}
+        onClose={() => {
+          setShowPasswordDialog(false)
+          setPasswordInput('')
+          setPasswordError(false)
+        }}
+        title="Acces opțiuni avansate"
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Introduceți parola pentru a accesa opțiunile ascunse (tip achiziție: 0, Director).
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="hidden-password">Parolă</Label>
+            <Input
+              id="hidden-password"
+              type="password"
+              value={passwordInput}
+              onChange={(e) => {
+                setPasswordInput(e.target.value)
+                setPasswordError(false)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handlePasswordSubmit()
+                }
+              }}
+              placeholder="Introduceți parola"
+              autoFocus
+            />
+            {passwordError && (
+              <p className="text-sm text-destructive">Parolă incorectă</p>
+            )}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowPasswordDialog(false)
+                setPasswordInput('')
+                setPasswordError(false)
+              }}
+            >
+              Anulează
+            </Button>
+            <Button type="button" onClick={handlePasswordSubmit}>
+              Confirmă
+            </Button>
+          </div>
+        </div>
       </Dialog>
     </>
   )
