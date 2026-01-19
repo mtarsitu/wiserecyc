@@ -697,7 +697,7 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
                 value={formData.cash_register_id || ''}
                 onChange={handleChange}
                 options={cashRegisterOptions}
-                placeholder="Selecteaza casa (optional)"
+                placeholder="Selecteaza casa/cont"
               />
               <p className="text-xs text-muted-foreground">
                 Selecteaza casa pentru a inregistra automat incasarea in casierie

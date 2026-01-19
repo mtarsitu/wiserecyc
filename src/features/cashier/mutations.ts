@@ -43,6 +43,11 @@ export function useCreateCashRegister() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: cashierKeys.registers(variables.company_id) })
+      // Also invalidate daily summary to show new register in cards
+      queryClient.invalidateQueries({
+        queryKey: ['cashier', 'daily-summary', variables.company_id],
+        exact: false
+      })
     },
   })
 }
@@ -69,6 +74,11 @@ export function useUpdateCashRegister() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: cashierKeys.registers(variables.company_id) })
+      // Also invalidate daily summary to show updated register in cards
+      queryClient.invalidateQueries({
+        queryKey: ['cashier', 'daily-summary', variables.company_id],
+        exact: false
+      })
     },
   })
 }
@@ -89,6 +99,11 @@ export function useDeleteCashRegister() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: cashierKeys.registers(variables.company_id) })
+      // Also invalidate daily summary to remove deleted register from cards
+      queryClient.invalidateQueries({
+        queryKey: ['cashier', 'daily-summary', variables.company_id],
+        exact: false
+      })
     },
   })
 }

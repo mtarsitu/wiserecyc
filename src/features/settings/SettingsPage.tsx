@@ -6,6 +6,7 @@ import { Plus, Edit2, Trash2, Loader2 } from 'lucide-react'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { expenseCategoriesQueryOptions } from '@/features/expenses/queries'
 import { useCreateExpenseCategory, useUpdateExpenseCategory, useDeleteExpenseCategory } from '@/features/expenses/mutations'
+import { SerialPortTest } from './components/SerialPortTest'
 import type { ExpenseCategory } from '@/types/database'
 
 // Default categories to seed if empty
@@ -243,6 +244,18 @@ export function SettingsPage() {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Conexiune Cântar</CardTitle>
+              <CardDescription>
+                Testează și configurează conexiunea cu cântarul prin port COM
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SerialPortTest />
             </CardContent>
           </Card>
         </div>
