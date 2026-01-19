@@ -130,15 +130,28 @@ export function SerialPortTest() {
               const text = decoder.decode(value)
               const timestamp = new Date().toLocaleTimeString('ro-RO')
 
-              // Parse the data - scales often send weight in specific formats
-              const cleanText = text.trim()
-              if (cleanText) {
-                setReceivedData(prev => {
-                  const newData = [...prev, `[${timestamp}] ${cleanText}`]
-                  // Keep only last 50 entries
-                  return newData.slice(-50)
-                })
-              }
+              // Convert bytes to HEX for debugging
+              const hexBytes = Array.from(value)
+                .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+                .join(' ')
+
+              // Show both raw text and HEX
+              const displayText = text.replace(/\r/g, '\\r').replace(/\n/g, '\\n')
+
+              setReceivedData(prev => {
+                const newData = [
+                  ...prev,
+                  `[${timestamp}] TEXT: "${displayText}"`,
+                  `[${timestamp}] HEX:  ${hexBytes}`,
+                  `---`
+                ]
+                // Keep only last 100 entries
+                return newData.slice(-100)
+              })
+
+              // Also log to browser console
+              console.log('[Scale RAW TEXT]:', JSON.stringify(text))
+              console.log('[Scale HEX]:', hexBytes)
             }
           }
         } catch (err) {

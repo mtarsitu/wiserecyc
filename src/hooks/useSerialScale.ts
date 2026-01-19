@@ -113,6 +113,9 @@ export function useSerialScale(options: UseSerialScaleOptions = {}): UseSerialSc
     // Accumulate data in buffer
     bufferRef.current += data
 
+    // DEBUG: Log raw data received
+    console.log('[Scale RAW]:', JSON.stringify(data))
+
     // Process complete lines (split by newline or carriage return)
     const lines = bufferRef.current.split(/[\r\n]+/)
 
@@ -120,7 +123,14 @@ export function useSerialScale(options: UseSerialScaleOptions = {}): UseSerialSc
     bufferRef.current = lines.pop() || ''
 
     for (const line of lines) {
+      // DEBUG: Log each complete line
+      console.log('[Scale LINE]:', JSON.stringify(line))
+
       const reading = parseScaleReading(line)
+
+      // DEBUG: Log parsed result
+      console.log('[Scale PARSED]:', reading)
+
       if (reading) {
         setLastReading(reading)
         onReading?.(reading)
