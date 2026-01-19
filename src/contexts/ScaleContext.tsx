@@ -60,31 +60,39 @@ function parseScaleReading(raw: string): ScaleReading | null {
   if (!trimmed) return null
 
   // Format 1: CSV format like "1,ST,       100,      0,kg" or "     0,kg"
+  // Structure: ID, STATUS, WEIGHT, TARE?, UNIT
+  // Weight is typically at position 2 (after ID and status)
   if (trimmed.includes(',')) {
     const parts = trimmed.split(',').map(p => p.trim())
-    let weightValue: number | null = null
     let unit = 'kg'
+    let weightValue: number | null = null
 
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i]
-
+    // Find the unit
+    for (const part of parts) {
       if (/^(kg|g|lb|oz|t)$/i.test(part)) {
         unit = part.toLowerCase()
-        continue
-      }
-
-      const numMatch = part.match(/^-?\s*(\d+(?:[.,]\d+)?)\s*$/)
-      if (numMatch) {
-        const num = parseFloat(numMatch[1].replace(',', '.'))
-        if (!isNaN(num)) {
-          if (weightValue === null || num > weightValue) {
-            weightValue = num
-          }
-        }
+        break
       }
     }
 
-    if (weightValue !== null) {
+    // Simple format like "     0,kg" (just 2 parts)
+    if (parts.length === 2) {
+      const numMatch = parts[0].match(/^-?\s*(\d+(?:[.,]\d+)?)\s*$/)
+      if (numMatch) {
+        weightValue = parseFloat(numMatch[1].replace(',', '.'))
+      }
+    }
+    // Full format like "1,ST,100,0,kg" - weight is at position 2
+    else if (parts.length >= 3) {
+      // Skip position 0 (ID like "1") and position 1 (status like "ST")
+      // Weight should be at position 2
+      const numMatch = parts[2].match(/^-?\s*(\d+(?:[.,]\d+)?)\s*$/)
+      if (numMatch) {
+        weightValue = parseFloat(numMatch[1].replace(',', '.'))
+      }
+    }
+
+    if (weightValue !== null && !isNaN(weightValue)) {
       return {
         value: weightValue,
         unit,
