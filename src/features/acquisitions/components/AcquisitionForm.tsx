@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button, Input, Label, Select, Dialog } from '@/components/ui'
-import { Plus, Trash2, Loader2, Eye, EyeOff, Truck } from 'lucide-react'
+import { Plus, Trash2, Loader2, Eye, EyeOff, Truck, Scale, Usb, Check, X } from 'lucide-react'
 import { suppliersQueryOptions } from '@/features/suppliers/queries'
 import { materialsQueryOptions } from '@/features/materials/queries'
 import { cashRegistersQueryOptions } from '@/features/cashier/queries'
@@ -17,6 +17,7 @@ import { SupplierForm } from '@/features/suppliers/components/SupplierForm'
 import { TransporterForm } from '@/features/transporters/components/TransporterForm'
 import { VehicleForm } from '@/features/vehicles/components/VehicleForm'
 import { DriverForm } from '@/features/drivers/components/DriverForm'
+import { useSerialScale } from '@/hooks/useSerialScale'
 import type { AcquisitionWithDetails } from '../queries'
 import type { PaymentStatus, InsertTables, LocationType, AcquisitionType, TransportType } from '@/types/database'
 
@@ -29,6 +30,11 @@ interface AcquisitionItemInput {
   price_per_kg: number
   line_total: number
   acquisition_type: AcquisitionType
+  // Weight fields per line
+  weight_brut: number | null
+  weight_tara: number | null
+  weight_brut_time: string | null
+  weight_tara_time: string | null
 }
 
 interface FormData {
@@ -60,6 +66,10 @@ const emptyItem: AcquisitionItemInput = {
   price_per_kg: 0,
   line_total: 0,
   acquisition_type: 'normal',
+  weight_brut: null,
+  weight_tara: null,
+  weight_brut_time: null,
+  weight_tara_time: null,
 }
 
 const initialFormData: FormData = {
@@ -107,11 +117,16 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
   const [showHiddenOptions, setShowHiddenOptions] = useState(false)
   const [detectedVehicle, setDetectedVehicle] = useState<VehicleWithRelations | null>(null)
   const [isDetectingVehicle, setIsDetectingVehicle] = useState(false)
+  const [scaleBaudRate, setScaleBaudRate] = useState(9600)
 
-  // Keyboard shortcut handler for Ctrl+M / Cmd+M to show hidden options
+  // Serial scale hook
+  const scale = useSerialScale({ baudRate: scaleBaudRate })
+
+  // Keyboard shortcut handler for Ctrl+Shift+H / Cmd+Shift+H to show hidden options
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'h' || e.key === 'H')) {
       e.preventDefault()
+      e.stopPropagation()
       setShowHiddenOptions(prev => !prev)
     }
   }, [])
@@ -298,6 +313,11 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
             price_per_kg: item.price_per_kg,
             line_total: item.line_total,
             acquisition_type: itemWithType.acquisition_type || 'normal',
+            // Weight fields per item
+            weight_brut: null,
+            weight_tara: null,
+            weight_brut_time: null,
+            weight_tara_time: null,
           }
         }),
       })
@@ -528,7 +548,7 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
             <div className="flex items-center gap-2">
               <EyeOff className="h-4 w-4 text-orange-600" />
               <span className="text-sm font-medium text-orange-700 dark:text-orange-400">
-                Mod ascuns activ - coloana "Tip" este vizibila in tabel (Ctrl+M pentru a ascunde)
+                Mod ascuns activ - coloana "Tip" este vizibila in tabel (Ctrl+Shift+H pentru a ascunde)
               </span>
             </div>
             <Button
@@ -760,6 +780,81 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
           </div>
         )}
 
+        {/* Scale connection bar */}
+        <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Scale className="h-5 w-5 text-primary" />
+              <Label className="font-semibold">Cântar</Label>
+            </div>
+
+            {scale.isSupported && (
+              <select
+                value={scaleBaudRate}
+                onChange={(e) => setScaleBaudRate(Number(e.target.value))}
+                disabled={scale.isConnected}
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+              >
+                <option value={9600}>9600</option>
+                <option value={4800}>4800</option>
+                <option value={19200}>19200</option>
+              </select>
+            )}
+
+            {scale.isSupported && !scale.isConnected && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={scale.connect}
+                disabled={scale.isConnecting}
+              >
+                {scale.isConnecting ? (
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                ) : (
+                  <Usb className="mr-1 h-3 w-3" />
+                )}
+                Conectare
+              </Button>
+            )}
+
+            {scale.isConnected && (
+              <Button
+                type="button"
+                size="sm"
+                variant="destructive"
+                onClick={scale.disconnect}
+              >
+                <X className="mr-1 h-3 w-3" />
+                Deconectare
+              </Button>
+            )}
+
+            <div className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs ${
+              scale.isConnected
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-muted text-muted-foreground'
+            }`}>
+              {scale.isConnected ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+              {scale.isConnected ? 'Conectat' : 'Neconectat'}
+            </div>
+          </div>
+
+          {scale.isConnected && scale.lastReading && (
+            <div className="flex items-center gap-2 rounded-md bg-black px-3 py-1">
+              <span className="font-mono text-lg font-bold text-green-400">
+                {scale.lastReading.value.toFixed(2)} {scale.lastReading.unit}
+              </span>
+            </div>
+          )}
+
+          {!scale.isSupported && (
+            <span className="text-xs text-amber-600">
+              Folosiți Chrome/Edge pentru cântar
+            </span>
+          )}
+        </div>
+
         {/* Items table */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -775,11 +870,13 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
               <thead className="bg-muted/50">
                 <tr>
                   <th className="px-3 py-2 text-left font-medium">Material</th>
+                  <th className="px-3 py-2 text-right font-medium">Brut (kg)</th>
+                  <th className="px-3 py-2 text-right font-medium">Tara (kg)</th>
                   <th className="px-3 py-2 text-right font-medium">Cantitate (kg)</th>
                   <th className="px-3 py-2 text-right font-medium">Impuritati (%)</th>
-                  <th className="px-3 py-2 text-right font-medium">Cant. finala (kg)</th>
-                  <th className="px-3 py-2 text-right font-medium">Pret/kg (RON)</th>
-                  <th className="px-3 py-2 text-right font-medium">Total linie (RON)</th>
+                  <th className="px-3 py-2 text-right font-medium">Cant. finala</th>
+                  <th className="px-3 py-2 text-right font-medium">Pret/kg</th>
+                  <th className="px-3 py-2 text-right font-medium">Total (RON)</th>
                   {showHiddenOptions && (
                     <th className="px-3 py-2 text-center font-medium text-orange-600">Tip</th>
                   )}
@@ -795,9 +892,128 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                         onChange={(e) => handleItemChange(index, 'material_id', e.target.value)}
                         options={materialOptions}
                         placeholder="Selecteaza"
-                        className="w-full"
+                        className="w-full min-w-[120px]"
                       />
                     </td>
+                    {/* Brut (masina plina) */}
+                    <td className="px-2 py-2">
+                      <div className="flex gap-1">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={item.weight_brut ?? ''}
+                          onChange={(e) => {
+                            const brut = parseFloat(e.target.value) || null
+                            const tara = item.weight_tara
+                            const net = brut !== null && tara !== null ? Math.max(0, brut - tara) : null
+                            setFormData(prev => {
+                              const newItems = [...prev.items]
+                              newItems[index] = {
+                                ...newItems[index],
+                                weight_brut: brut,
+                                quantity: net ?? newItems[index].quantity,
+                                final_quantity: net !== null ? net * (1 - newItems[index].impurities_percent / 100) : newItems[index].final_quantity,
+                                line_total: net !== null ? net * (1 - newItems[index].impurities_percent / 100) * newItems[index].price_per_kg : newItems[index].line_total,
+                              }
+                              return { ...prev, items: newItems }
+                            })
+                          }}
+                          className="text-right w-20"
+                          title={item.weight_brut_time ? `Ora: ${new Date(item.weight_brut_time).toLocaleTimeString('ro-RO')}` : ''}
+                        />
+                        {scale.isConnected && (
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            className="h-9 w-9 shrink-0"
+                            onClick={() => {
+                              if (scale.lastReading) {
+                                const brut = scale.lastReading.value
+                                const tara = item.weight_tara
+                                const net = tara !== null ? Math.max(0, brut - tara) : null
+                                setFormData(prev => {
+                                  const newItems = [...prev.items]
+                                  newItems[index] = {
+                                    ...newItems[index],
+                                    weight_brut: brut,
+                                    weight_brut_time: new Date().toISOString(),
+                                    quantity: net ?? newItems[index].quantity,
+                                    final_quantity: net !== null ? net * (1 - newItems[index].impurities_percent / 100) : newItems[index].final_quantity,
+                                    line_total: net !== null ? net * (1 - newItems[index].impurities_percent / 100) * newItems[index].price_per_kg : newItems[index].line_total,
+                                  }
+                                  return { ...prev, items: newItems }
+                                })
+                              }
+                            }}
+                            title="Preia brut de la cântar"
+                          >
+                            <Truck className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                    {/* Tara (masina goala) */}
+                    <td className="px-2 py-2">
+                      <div className="flex gap-1">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={item.weight_tara ?? ''}
+                          onChange={(e) => {
+                            const tara = parseFloat(e.target.value) || null
+                            const brut = item.weight_brut
+                            const net = brut !== null && tara !== null ? Math.max(0, brut - tara) : null
+                            setFormData(prev => {
+                              const newItems = [...prev.items]
+                              newItems[index] = {
+                                ...newItems[index],
+                                weight_tara: tara,
+                                quantity: net ?? newItems[index].quantity,
+                                final_quantity: net !== null ? net * (1 - newItems[index].impurities_percent / 100) : newItems[index].final_quantity,
+                                line_total: net !== null ? net * (1 - newItems[index].impurities_percent / 100) * newItems[index].price_per_kg : newItems[index].line_total,
+                              }
+                              return { ...prev, items: newItems }
+                            })
+                          }}
+                          className="text-right w-20"
+                          title={item.weight_tara_time ? `Ora: ${new Date(item.weight_tara_time).toLocaleTimeString('ro-RO')}` : ''}
+                        />
+                        {scale.isConnected && (
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            className="h-9 w-9 shrink-0"
+                            onClick={() => {
+                              if (scale.lastReading) {
+                                const tara = scale.lastReading.value
+                                const brut = item.weight_brut
+                                const net = brut !== null ? Math.max(0, brut - tara) : null
+                                setFormData(prev => {
+                                  const newItems = [...prev.items]
+                                  newItems[index] = {
+                                    ...newItems[index],
+                                    weight_tara: tara,
+                                    weight_tara_time: new Date().toISOString(),
+                                    quantity: net ?? newItems[index].quantity,
+                                    final_quantity: net !== null ? net * (1 - newItems[index].impurities_percent / 100) : newItems[index].final_quantity,
+                                    line_total: net !== null ? net * (1 - newItems[index].impurities_percent / 100) * newItems[index].price_per_kg : newItems[index].line_total,
+                                  }
+                                  return { ...prev, items: newItems }
+                                })
+                              }
+                            }}
+                            title="Preia tara de la cântar"
+                          >
+                            <Truck className="h-4 w-4 opacity-50" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                    {/* Cantitate (net = brut - tara) */}
                     <td className="px-2 py-2">
                       <Input
                         type="number"
@@ -805,7 +1021,7 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                         min="0"
                         value={item.quantity || ''}
                         onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                        className="text-right"
+                        className={`text-right w-20 ${item.weight_brut !== null && item.weight_tara !== null ? 'bg-green-50 dark:bg-green-950' : ''}`}
                       />
                     </td>
                     <td className="px-2 py-2">
@@ -816,7 +1032,7 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                         max="100"
                         value={item.impurities_percent || ''}
                         onChange={(e) => handleItemChange(index, 'impurities_percent', e.target.value)}
-                        className="text-right"
+                        className="text-right w-16"
                       />
                     </td>
                     <td className="px-2 py-2">
@@ -825,7 +1041,7 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                         step="0.01"
                         value={item.final_quantity.toFixed(2)}
                         readOnly
-                        className="text-right bg-muted/50"
+                        className="text-right bg-muted/50 w-20"
                       />
                     </td>
                     <td className="px-2 py-2">
@@ -835,7 +1051,7 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                         min="0"
                         value={item.price_per_kg || ''}
                         onChange={(e) => handleItemChange(index, 'price_per_kg', e.target.value)}
-                        className="text-right"
+                        className="text-right w-20"
                       />
                     </td>
                     <td className="px-2 py-2">
@@ -843,7 +1059,7 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                         type="number"
                         value={item.line_total.toFixed(2)}
                         readOnly
-                        className="text-right bg-muted/50 font-medium"
+                        className="text-right bg-muted/50 font-medium w-24"
                       />
                     </td>
                     {showHiddenOptions && (
@@ -878,7 +1094,7 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
               </tbody>
               <tfoot className="bg-muted/30">
                 <tr className="border-t-2">
-                  <td colSpan={showHiddenOptions ? 6 : 5} className="px-3 py-2 text-right font-semibold">
+                  <td colSpan={showHiddenOptions ? 8 : 7} className="px-3 py-2 text-right font-semibold">
                     Total achizitie:
                   </td>
                   <td className="px-3 py-2 text-right font-bold text-lg">
