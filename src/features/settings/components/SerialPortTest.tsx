@@ -2,13 +2,41 @@ import { useState, useRef, useCallback } from 'react'
 import { Button, Label } from '@/components/ui'
 import { Loader2, Usb, Check, X, RefreshCw } from 'lucide-react'
 
+// Web Serial API types (not included in standard TypeScript lib)
 interface SerialPortInfo {
   usbVendorId?: number
   usbProductId?: number
 }
 
+interface SerialOptions {
+  baudRate: number
+  dataBits?: number
+  stopBits?: number
+  parity?: 'none' | 'even' | 'odd'
+  flowControl?: 'none' | 'hardware'
+}
+
+interface SerialPort {
+  readable: ReadableStream<Uint8Array> | null
+  writable: WritableStream<Uint8Array> | null
+  getInfo(): SerialPortInfo
+  open(options: SerialOptions): Promise<void>
+  close(): Promise<void>
+}
+
+interface Serial {
+  requestPort(): Promise<SerialPort>
+  getPorts(): Promise<SerialPort[]>
+}
+
+declare global {
+  interface Navigator {
+    serial?: Serial
+  }
+}
+
 export function SerialPortTest() {
-  const [isSupported, setIsSupported] = useState<boolean>(() => 'serial' in navigator)
+  const isSupported = 'serial' in navigator
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [receivedData, setReceivedData] = useState<string[]>([])
@@ -24,7 +52,7 @@ export function SerialPortTest() {
   const baudRateOptions = [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200]
 
   const connectToPort = useCallback(async () => {
-    if (!isSupported) {
+    if (!isSupported || !navigator.serial) {
       setError('Web Serial API nu este suportat în acest browser. Folosiți Chrome sau Edge.')
       return
     }
@@ -76,7 +104,7 @@ export function SerialPortTest() {
     }
   }, [baudRate, isSupported])
 
-  const startReading = useCallback(async (port: SerialPort) => {
+  const startReading = useCallback(async (port: SerialPort): Promise<void> => {
     if (!port.readable) {
       setError('Portul nu poate fi citit.')
       return
