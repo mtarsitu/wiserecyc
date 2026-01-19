@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button, Input, Label, Select, Dialog } from '@/components/ui'
-import { Plus, Trash2, Loader2, Eye, EyeOff, Truck, Scale, Usb, Check, X } from 'lucide-react'
+import { Plus, Trash2, Loader2, Eye, EyeOff, Truck, Scale } from 'lucide-react'
 import { suppliersQueryOptions } from '@/features/suppliers/queries'
 import { materialsQueryOptions } from '@/features/materials/queries'
 import { cashRegistersQueryOptions } from '@/features/cashier/queries'
@@ -17,7 +17,7 @@ import { SupplierForm } from '@/features/suppliers/components/SupplierForm'
 import { TransporterForm } from '@/features/transporters/components/TransporterForm'
 import { VehicleForm } from '@/features/vehicles/components/VehicleForm'
 import { DriverForm } from '@/features/drivers/components/DriverForm'
-import { useSerialScale } from '@/hooks/useSerialScale'
+import { useScale } from '@/contexts/ScaleContext'
 import type { AcquisitionWithDetails } from '../queries'
 import type { PaymentStatus, InsertTables, LocationType, AcquisitionType, TransportType } from '@/types/database'
 
@@ -117,10 +117,9 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
   const [showHiddenOptions, setShowHiddenOptions] = useState(false)
   const [detectedVehicle, setDetectedVehicle] = useState<VehicleWithRelations | null>(null)
   const [isDetectingVehicle, setIsDetectingVehicle] = useState(false)
-  const [scaleBaudRate, setScaleBaudRate] = useState(9600)
 
-  // Serial scale hook
-  const scale = useSerialScale({ baudRate: scaleBaudRate })
+  // Global scale context
+  const scale = useScale()
 
   // Keyboard shortcut handler for Ctrl+Shift+H / Cmd+Shift+H to show hidden options
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -780,78 +779,31 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
           </div>
         )}
 
-        {/* Scale connection bar */}
+        {/* Scale indicator bar */}
         <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Scale className="h-5 w-5 text-primary" />
-              <Label className="font-semibold">Cântar</Label>
-            </div>
+          <div className="flex items-center gap-3">
+            <Scale className="h-5 w-5 text-primary" />
+            <Label className="font-semibold">Cântar</Label>
 
-            {scale.isSupported && (
-              <select
-                value={scaleBaudRate}
-                onChange={(e) => setScaleBaudRate(Number(e.target.value))}
-                disabled={scale.isConnected}
-                className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-              >
-                <option value={9600}>9600</option>
-                <option value={4800}>4800</option>
-                <option value={19200}>19200</option>
-              </select>
+            {/* Status indicator - green/red circle */}
+            <div className={`h-3 w-3 rounded-full ${
+              scale.isConnected ? 'bg-green-500' : 'bg-red-500'
+            }`} title={scale.isConnected ? 'Conectat' : 'Neconectat - conectați din Setări'} />
+
+            {!scale.isConnected && (
+              <span className="text-xs text-muted-foreground">
+                Conectați cântarul din Setări
+              </span>
             )}
-
-            {scale.isSupported && !scale.isConnected && (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={scale.connect}
-                disabled={scale.isConnecting}
-              >
-                {scale.isConnecting ? (
-                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                ) : (
-                  <Usb className="mr-1 h-3 w-3" />
-                )}
-                Conectare
-              </Button>
-            )}
-
-            {scale.isConnected && (
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                onClick={scale.disconnect}
-              >
-                <X className="mr-1 h-3 w-3" />
-                Deconectare
-              </Button>
-            )}
-
-            <div className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs ${
-              scale.isConnected
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                : 'bg-muted text-muted-foreground'
-            }`}>
-              {scale.isConnected ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-              {scale.isConnected ? 'Conectat' : 'Neconectat'}
-            </div>
           </div>
 
-          {scale.isConnected && scale.lastReading && (
-            <div className="flex items-center gap-2 rounded-md bg-black px-3 py-1">
-              <span className="font-mono text-lg font-bold text-green-400">
-                {scale.lastReading.value.toFixed(2)} {scale.lastReading.unit}
+          {/* Live reading - always show when connected */}
+          {scale.isConnected && (
+            <div className="flex items-center gap-2 rounded-md bg-black px-4 py-2">
+              <span className="font-mono text-xl font-bold text-green-400">
+                {scale.lastReading ? `${scale.lastReading.value.toFixed(2)} ${scale.lastReading.unit}` : '0.00 kg'}
               </span>
             </div>
-          )}
-
-          {!scale.isSupported && (
-            <span className="text-xs text-amber-600">
-              Folosiți Chrome/Edge pentru cântar
-            </span>
           )}
         </div>
 

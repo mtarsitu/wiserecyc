@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
 
 // Web Serial API types
 interface SerialPortInfo {
@@ -40,51 +40,43 @@ export interface ScaleReading {
   raw: string
 }
 
-export interface UseSerialScaleOptions {
-  baudRate?: number
-  onReading?: (reading: ScaleReading) => void
-}
-
-export interface UseSerialScaleReturn {
+interface ScaleContextType {
   isSupported: boolean
   isConnected: boolean
   isConnecting: boolean
   lastReading: ScaleReading | null
   error: string | null
+  baudRate: number
+  setBaudRate: (rate: number) => void
   connect: () => Promise<void>
   disconnect: () => Promise<void>
-  captureWeight: () => ScaleReading | null
 }
 
-// Parse weight from scale output - common formats
+const ScaleContext = createContext<ScaleContextType | null>(null)
+
+// Parse weight from scale output
 function parseScaleReading(raw: string): ScaleReading | null {
   const trimmed = raw.trim()
   if (!trimmed) return null
 
   // Format 1: CSV format like "1,ST,       100,      0,kg" or "     0,kg"
-  // Split by comma and look for the weight value
   if (trimmed.includes(',')) {
     const parts = trimmed.split(',').map(p => p.trim())
-
-    // Look for numeric value and unit
     let weightValue: number | null = null
     let unit = 'kg'
 
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i]
 
-      // Check if this part is "kg", "g", etc.
       if (/^(kg|g|lb|oz|t)$/i.test(part)) {
         unit = part.toLowerCase()
         continue
       }
 
-      // Check if this is a numeric value (possibly with spaces)
       const numMatch = part.match(/^-?\s*(\d+(?:[.,]\d+)?)\s*$/)
       if (numMatch) {
         const num = parseFloat(numMatch[1].replace(',', '.'))
         if (!isNaN(num)) {
-          // Keep the largest number as weight (skip line numbers like "1")
           if (weightValue === null || num > weightValue) {
             weightValue = num
           }
@@ -102,16 +94,14 @@ function parseScaleReading(raw: string): ScaleReading | null {
     }
   }
 
-  // Format 2: Simple format like "  12.50 kg" or "12.50kg" or "+  12.50 kg"
+  // Format 2: Simple format like "  12.50 kg"
   const patterns = [
-    // Pattern: optional prefix, number with optional decimals, unit
     /[+-]?\s*(\d+(?:[.,]\d+)?)\s*(kg|g|lb|oz|t)?/i,
   ]
 
   for (const pattern of patterns) {
     const match = trimmed.match(pattern)
     if (match) {
-      // Replace comma with dot for parsing
       const numStr = match[1].replace(',', '.')
       const value = parseFloat(numStr)
 
@@ -129,13 +119,12 @@ function parseScaleReading(raw: string): ScaleReading | null {
   return null
 }
 
-export function useSerialScale(options: UseSerialScaleOptions = {}): UseSerialScaleReturn {
-  const { baudRate = 9600, onReading } = options
-
+export function ScaleProvider({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [lastReading, setLastReading] = useState<ScaleReading | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [baudRate, setBaudRate] = useState(9600)
 
   const portRef = useRef<SerialPort | null>(null)
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null)
@@ -145,23 +134,17 @@ export function useSerialScale(options: UseSerialScaleOptions = {}): UseSerialSc
   const isSupported = typeof navigator !== 'undefined' && 'serial' in navigator
 
   const processData = useCallback((data: string) => {
-    // Accumulate data in buffer
     bufferRef.current += data
-
-    // Process complete lines (split by newline or carriage return)
     const lines = bufferRef.current.split(/[\r\n]+/)
-
-    // Keep incomplete line in buffer
     bufferRef.current = lines.pop() || ''
 
     for (const line of lines) {
       const reading = parseScaleReading(line)
       if (reading) {
         setLastReading(reading)
-        onReading?.(reading)
       }
     }
-  }, [onReading])
+  }, [])
 
   const startReading = useCallback(async (port: SerialPort): Promise<void> => {
     if (!port.readable) {
@@ -180,9 +163,7 @@ export function useSerialScale(options: UseSerialScaleOptions = {}): UseSerialSc
         try {
           while (isReadingRef.current) {
             const { value, done } = await reader.read()
-
             if (done) break
-
             if (value) {
               const text = decoder.decode(value)
               processData(text)
@@ -203,7 +184,7 @@ export function useSerialScale(options: UseSerialScaleOptions = {}): UseSerialSc
 
   const connect = useCallback(async () => {
     if (!isSupported || !navigator.serial) {
-      setError('Web Serial API nu este suportat în acest browser. Folosiți Chrome sau Edge.')
+      setError('Web Serial API nu este suportat în acest browser.')
       return
     }
 
@@ -225,7 +206,6 @@ export function useSerialScale(options: UseSerialScaleOptions = {}): UseSerialSc
       setIsConnected(true)
       bufferRef.current = ''
 
-      // Start reading
       startReading(port)
 
     } catch (err) {
@@ -269,10 +249,6 @@ export function useSerialScale(options: UseSerialScaleOptions = {}): UseSerialSc
     }
   }, [])
 
-  const captureWeight = useCallback((): ScaleReading | null => {
-    return lastReading
-  }, [lastReading])
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -286,14 +262,29 @@ export function useSerialScale(options: UseSerialScaleOptions = {}): UseSerialSc
     }
   }, [])
 
-  return {
-    isSupported,
-    isConnected,
-    isConnecting,
-    lastReading,
-    error,
-    connect,
-    disconnect,
-    captureWeight,
+  return (
+    <ScaleContext.Provider
+      value={{
+        isSupported,
+        isConnected,
+        isConnecting,
+        lastReading,
+        error,
+        baudRate,
+        setBaudRate,
+        connect,
+        disconnect,
+      }}
+    >
+      {children}
+    </ScaleContext.Provider>
+  )
+}
+
+export function useScale() {
+  const context = useContext(ScaleContext)
+  if (!context) {
+    throw new Error('useScale must be used within a ScaleProvider')
   }
+  return context
 }

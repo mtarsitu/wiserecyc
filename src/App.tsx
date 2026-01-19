@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ScaleProvider } from '@/contexts/ScaleContext'
 import { Layout } from '@/components/layout'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
 import { LoginPage } from '@/features/auth/LoginPage'
@@ -42,6 +43,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <ScaleProvider>
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
@@ -80,6 +82,7 @@ function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+        </ScaleProvider>
       </AuthProvider>
     </QueryClientProvider>
   )
