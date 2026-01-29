@@ -704,8 +704,8 @@ export function DashboardPage() {
       })
     }
 
-    // 6. Expenses without category
-    const expensesWithoutCategory = expenses.filter(e => !e.category_id)
+    // 6. Expenses without category (excluding TRANSFER CASE which is internal transfer, not a real expense)
+    const expensesWithoutCategory = expenses.filter(e => !e.category_id && !e.name?.toUpperCase().includes('TRANSFER CASE'))
     if (expensesWithoutCategory.length > 0) {
       issues.push({
         type: 'info',

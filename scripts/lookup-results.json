@@ -466,5 +466,18 @@
       "city": "Roman",
       "county": "Neamt"
     }
+  },
+  {
+    "id": "1b3c0f82-8bc1-486a-b300-d5a70c6ce011",
+    "name": "ROMRECYCLING SRL",
+    "type": "client",
+    "status": "found",
+    "data": {
+      "cui": "9578947",
+      "reg_com": "J23/2981/2014",
+      "address": "Sos. De Centura 41",
+      "city": "Jilava",
+      "county": "Ilfov"
+    }
   }
 ]
