@@ -17,14 +17,20 @@ import {
   EyeOff,
   Eye,
   Wallet,
-  Receipt
+  Receipt,
+  AlertTriangle,
+  Bell
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { inventoryQueryOptions } from '@/features/inventory/queries'
 import { acquisitionsQueryOptions } from '@/features/acquisitions/queries'
 import { salesQueryOptions } from '@/features/sales/queries'
 import { materialsQueryOptions } from '@/features/materials/queries'
 import { expensesQueryOptions } from '@/features/expenses/queries'
+import { suppliersQueryOptions } from '@/features/suppliers/queries'
+import { clientsQueryOptions } from '@/features/clients/queries'
+import { contractsQueryOptions } from '@/features/contracts/queries'
 import type { Material, AcquisitionType } from '@/types/database'
 
 // Material category classification
@@ -158,6 +164,7 @@ export function DashboardPage() {
 
   // Hidden data toggle (Ctrl+M) - only for admin users
   const [showHiddenData, setShowHiddenData] = useState(false)
+  const [hideNotifications, setHideNotifications] = useState(false)
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin'
 
   // Keyboard shortcut handler for Ctrl+M / Cmd+M to toggle hidden data view
@@ -181,6 +188,9 @@ export function DashboardPage() {
   const { data: sales = [], isLoading: isLoadingSales } = useQuery(salesQueryOptions(companyId))
   const { data: materials = [], isLoading: isLoadingMaterials } = useQuery(materialsQueryOptions())
   const { data: expenses = [], isLoading: isLoadingExpenses } = useQuery(expensesQueryOptions(companyId))
+  const { data: suppliers = [] } = useQuery(suppliersQueryOptions(companyId))
+  const { data: clients = [] } = useQuery(clientsQueryOptions(companyId))
+  const { data: contracts = [] } = useQuery(contractsQueryOptions(companyId))
 
   const isLoading = isLoadingInventory || isLoadingAcquisitions || isLoadingSales || isLoadingMaterials || isLoadingExpenses
 
@@ -234,6 +244,116 @@ export function DashboardPage() {
 
     return result
   }, [acquisitions, materialMap, isHiddenItem])
+
+  // Calculate per-material acquisition prices by category
+  const acqMaterialsByCategory = useMemo(() => {
+    const result: Record<MaterialCategoryType, MaterialStats[]> = {
+      feros: [],
+      neferos: [],
+      deee: [],
+      altele: [],
+    }
+
+    const materialTotals = new Map<string, { materialId: string; materialName: string; category: MaterialCategoryType; quantity: number; amount: number }>()
+
+    acquisitions.forEach(acq => {
+      acq.items?.forEach(item => {
+        const material = materialMap.get(item.material_id) || item.material
+        if (!material) return
+
+        const category = getMaterialCategory(material)
+        const qty = item.final_quantity || item.quantity || 0
+        const amt = item.line_total || 0
+
+        const key = material.id
+        const existing = materialTotals.get(key) || {
+          materialId: material.id,
+          materialName: material.name,
+          category,
+          quantity: 0,
+          amount: 0,
+        }
+        existing.quantity += qty
+        existing.amount += amt
+        materialTotals.set(key, existing)
+      })
+    })
+
+    // Convert to MaterialStats and group by category
+    materialTotals.forEach(mat => {
+      const stats: MaterialStats = {
+        materialId: mat.materialId,
+        materialName: mat.materialName,
+        category: mat.category,
+        totalQuantity: mat.quantity,
+        totalAmount: mat.amount,
+        avgPrice: mat.quantity > 0 ? mat.amount / mat.quantity : 0,
+      }
+      result[mat.category].push(stats)
+    })
+
+    // Sort each category by quantity descending
+    Object.keys(result).forEach(cat => {
+      result[cat as MaterialCategoryType].sort((a, b) => b.totalQuantity - a.totalQuantity)
+    })
+
+    return result
+  }, [acquisitions, materialMap])
+
+  // Calculate per-material sale prices by category
+  const saleMaterialsByCategory = useMemo(() => {
+    const result: Record<MaterialCategoryType, MaterialStats[]> = {
+      feros: [],
+      neferos: [],
+      deee: [],
+      altele: [],
+    }
+
+    const materialTotals = new Map<string, { materialId: string; materialName: string; category: MaterialCategoryType; quantity: number; amount: number }>()
+
+    sales.forEach(sale => {
+      sale.items?.forEach(item => {
+        const material = materialMap.get(item.material_id) || item.material
+        if (!material) return
+
+        const category = getMaterialCategory(material)
+        const qty = item.final_quantity || item.quantity || 0
+        const amt = item.line_total || 0
+
+        const key = material.id
+        const existing = materialTotals.get(key) || {
+          materialId: material.id,
+          materialName: material.name,
+          category,
+          quantity: 0,
+          amount: 0,
+        }
+        existing.quantity += qty
+        existing.amount += amt
+        materialTotals.set(key, existing)
+      })
+    })
+
+    // Convert to MaterialStats and group by category
+    materialTotals.forEach(mat => {
+      const stats: MaterialStats = {
+        materialId: mat.materialId,
+        materialName: mat.materialName,
+        category: mat.category,
+        totalQuantity: mat.quantity,
+        totalAmount: mat.amount,
+        avgPrice: mat.quantity > 0 ? mat.amount / mat.quantity : 0,
+      }
+      result[mat.category].push(stats)
+    })
+
+    // Sort each category by quantity descending
+    Object.keys(result).forEach(cat => {
+      result[cat as MaterialCategoryType].sort((a, b) => b.totalQuantity - a.totalQuantity)
+    })
+
+    return result
+  }, [sales, materialMap])
 
   // Calculate overall average prices for sales
   const overallSaleAvgPrices = useMemo(() => {
@@ -476,6 +596,132 @@ export function DashboardPage() {
       .slice(0, 5)
   }, [sales])
 
+  // Notifications - data issues that need attention
+  const notifications = useMemo(() => {
+    const issues: Array<{
+      type: 'warning' | 'info'
+      category: string
+      message: string
+      count: number
+      link: string
+      items: Array<{ id: string; name?: string; date?: string; supplier?: string; client?: string; material?: string; quantity?: number }>
+    }> = []
+
+    // 1. Sales with price 0
+    const salesWithZeroPrice: typeof issues[0]['items'] = []
+    sales.forEach(sale => {
+      sale.items?.forEach(item => {
+        if (item.price_per_kg_ron === 0 || item.line_total === 0) {
+          const material = materialMap.get(item.material_id)
+          salesWithZeroPrice.push({
+            id: sale.id,
+            date: sale.date,
+            client: sale.client?.name || 'N/A',
+            material: material?.name || 'N/A',
+            quantity: item.final_quantity || item.quantity
+          })
+        }
+      })
+    })
+    if (salesWithZeroPrice.length > 0) {
+      issues.push({
+        type: 'warning',
+        category: 'sale',
+        message: 'Vânzări cu preț 0',
+        count: salesWithZeroPrice.length,
+        link: '/vanzari',
+        items: salesWithZeroPrice
+      })
+    }
+
+    // 2. Acquisitions with price 0 (excluding 'zero' type = plusuri firma)
+    const acquisitionsWithZeroPrice: typeof issues[0]['items'] = []
+    acquisitions.forEach(acq => {
+      acq.items?.forEach(item => {
+        const itemWithType = item as typeof item & { acquisition_type?: AcquisitionType }
+        // Skip if it's a "plusuri firma" (zero type) - those legitimately have price 0
+        if (itemWithType.acquisition_type === 'zero') return
+
+        if (item.price_per_kg === 0 || item.line_total === 0) {
+          const material = materialMap.get(item.material_id)
+          acquisitionsWithZeroPrice.push({
+            id: acq.id,
+            date: acq.date,
+            supplier: acq.supplier?.name || 'N/A',
+            material: material?.name || 'N/A',
+            quantity: item.final_quantity || item.quantity
+          })
+        }
+      })
+    })
+    if (acquisitionsWithZeroPrice.length > 0) {
+      issues.push({
+        type: 'warning',
+        category: 'acquisition',
+        message: 'Achiziții cu preț 0',
+        count: acquisitionsWithZeroPrice.length,
+        link: '/achizitii',
+        items: acquisitionsWithZeroPrice
+      })
+    }
+
+    // 3. Suppliers without CUI
+    const suppliersWithoutCui = suppliers.filter(s => !s.cui || s.cui.trim() === '')
+    if (suppliersWithoutCui.length > 0) {
+      issues.push({
+        type: 'info',
+        category: 'supplier',
+        message: 'Furnizori fără CUI',
+        count: suppliersWithoutCui.length,
+        link: '/furnizori',
+        items: suppliersWithoutCui.slice(0, 10).map(s => ({ id: s.id, name: s.name }))
+      })
+    }
+
+    // 4. Clients without CUI
+    const clientsWithoutCui = clients.filter(c => !c.cui || c.cui.trim() === '')
+    if (clientsWithoutCui.length > 0) {
+      issues.push({
+        type: 'info',
+        category: 'client',
+        message: 'Clienți fără CUI',
+        count: clientsWithoutCui.length,
+        link: '/clienti',
+        items: clientsWithoutCui.slice(0, 10).map(c => ({ id: c.id, name: c.name }))
+      })
+    }
+
+    // 5. Contracts without value
+    const contractsWithoutValue = contracts.filter(c => !c.value || c.value === 0)
+    if (contractsWithoutValue.length > 0) {
+      issues.push({
+        type: 'info',
+        category: 'contract',
+        message: 'Contracte fără valoare',
+        count: contractsWithoutValue.length,
+        link: '/contracte',
+        items: contractsWithoutValue.slice(0, 10).map(c => ({ id: c.id, name: c.contract_number }))
+      })
+    }
+
+    // 6. Expenses without category
+    const expensesWithoutCategory = expenses.filter(e => !e.category_id)
+    if (expensesWithoutCategory.length > 0) {
+      issues.push({
+        type: 'info',
+        category: 'expense',
+        message: 'Cheltuieli fără categorie',
+        count: expensesWithoutCategory.length,
+        link: '/cheltuieli',
+        items: expensesWithoutCategory.slice(0, 10).map(e => ({ id: e.id, name: e.name, date: e.date }))
+      })
+    }
+
+    return issues
+  }, [sales, acquisitions, materialMap, suppliers, clients, contracts, expenses])
+
+  const totalNotifications = notifications.reduce((sum, n) => sum + n.count, 0)
+
   const openMaterialDetails = (materials: MaterialStats[], categoryLabel: string, type: 'acquisition' | 'sale') => {
     setDetailDialog({
       open: true,
@@ -570,6 +816,101 @@ export function DashboardPage() {
           </div>
         )}
 
+        {/* Notifications - Data issues that need attention */}
+        {totalNotifications > 0 && !hideNotifications && (
+          <Card className="mb-6 border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-amber-800 dark:text-amber-400">
+                  <Bell className="h-4 w-4" />
+                  Notificări ({totalNotifications})
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setHideNotifications(true)}
+                  className="text-amber-600 hover:text-amber-700 h-7 px-2"
+                >
+                  <EyeOff className="h-4 w-4 mr-1" />
+                  Ascunde
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {notifications.map((notification, idx) => (
+                  <div key={idx} className="rounded-lg border border-amber-200 bg-white dark:bg-background p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className={`h-4 w-4 ${notification.type === 'warning' ? 'text-amber-600' : 'text-blue-500'}`} />
+                        <span className="font-medium text-sm">{notification.message}</span>
+                        <Badge variant="secondary" className={notification.type === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}>
+                          {notification.count}
+                        </Badge>
+                      </div>
+                      <Link to={notification.link}>
+                        <Button variant="outline" size="sm">
+                          Vezi toate
+                        </Button>
+                      </Link>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1 max-h-32 overflow-y-auto">
+                      {notification.items.slice(0, 5).map((item, itemIdx) => (
+                        <div key={itemIdx} className="flex items-center gap-2 py-1 border-b last:border-0">
+                          {/* For sales/acquisitions show date, entity, material, quantity */}
+                          {(notification.category === 'sale' || notification.category === 'acquisition') && (
+                            <>
+                              <span className="text-muted-foreground">{item.date}</span>
+                              <span className="font-medium">
+                                {notification.category === 'sale' ? item.client : item.supplier}
+                              </span>
+                              <span>•</span>
+                              <span>{item.material}</span>
+                              <span>•</span>
+                              <span>{item.quantity?.toFixed(2)} kg</span>
+                            </>
+                          )}
+                          {/* For suppliers/clients/contracts show just name */}
+                          {(notification.category === 'supplier' || notification.category === 'client' || notification.category === 'contract') && (
+                            <span className="font-medium">{item.name}</span>
+                          )}
+                          {/* For expenses show name and date */}
+                          {notification.category === 'expense' && (
+                            <>
+                              <span className="text-muted-foreground">{item.date}</span>
+                              <span className="font-medium">{item.name}</span>
+                            </>
+                          )}
+                        </div>
+                      ))}
+                      {notification.items.length > 5 && (
+                        <div className="text-center text-amber-600 pt-1">
+                          + încă {notification.items.length - 5} înregistrări
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Show notifications button when hidden */}
+        {totalNotifications > 0 && hideNotifications && (
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setHideNotifications(false)}
+              className="text-amber-600 border-amber-300 hover:bg-amber-50"
+            >
+              <Bell className="h-4 w-4 mr-2" />
+              Arată notificări ({totalNotifications})
+            </Button>
+          </div>
+        )}
+
         {/* Main stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat) => {
@@ -610,10 +951,20 @@ export function DashboardPage() {
           <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
             <Scale className="h-4 w-4" />
             Preturi Medii Achizitii (Total)
+            <span className="text-xs font-normal">(click pentru detalii)</span>
           </h3>
           <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
             {(['feros', 'neferos', 'deee', 'altele'] as MaterialCategoryType[]).map(cat => (
-              <Card key={cat} className="p-3">
+              <Card
+                key={cat}
+                className="p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => setDetailDialog({
+                  open: true,
+                  data: acqMaterialsByCategory[cat],
+                  title: `Preturi Medii Achizitii - ${CATEGORY_LABELS[cat]}`,
+                  type: 'acquisition'
+                })}
+              >
                 <div className="flex items-center justify-between">
                   <Badge className={CATEGORY_COLORS[cat]}>{CATEGORY_LABELS[cat]}</Badge>
                   <span className="text-sm font-bold">
@@ -636,10 +987,20 @@ export function DashboardPage() {
           <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
             <Receipt className="h-4 w-4" />
             Preturi Medii Vanzari (Total)
+            <span className="text-xs font-normal">(click pentru detalii)</span>
           </h3>
           <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
             {(['feros', 'neferos', 'deee', 'altele'] as MaterialCategoryType[]).map(cat => (
-              <Card key={cat} className="p-3">
+              <Card
+                key={cat}
+                className="p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => setDetailDialog({
+                  open: true,
+                  data: saleMaterialsByCategory[cat],
+                  title: `Preturi Medii Vanzari - ${CATEGORY_LABELS[cat]}`,
+                  type: 'sale'
+                })}
+              >
                 <div className="flex items-center justify-between">
                   <Badge className={CATEGORY_COLORS[cat]}>{CATEGORY_LABELS[cat]}</Badge>
                   <span className="text-sm font-bold text-green-600">

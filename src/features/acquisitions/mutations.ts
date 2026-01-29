@@ -53,16 +53,18 @@ export function useCreateAcquisition() {
 
       // Create acquisition items
       if (items.length > 0) {
-        const itemsWithAcquisitionId = items.map((item) => {
-          // Only include acquisition_type if it's set and not 'normal' (to avoid errors if column doesn't exist)
-          const { acquisition_type, ...rest } = item
-          return {
-            ...rest,
-            acquisition_id: acquisition.id,
-            // Only include acquisition_type if it has a value
-            ...(acquisition_type ? { acquisition_type } : {}),
-          }
-        })
+        const itemsWithAcquisitionId = items.map((item) => ({
+          // Only include DB fields, exclude UI-only weight fields
+          material_id: item.material_id,
+          quantity: item.quantity,
+          impurities_percent: item.impurities_percent,
+          final_quantity: item.final_quantity,
+          price_per_kg: item.price_per_kg,
+          line_total: item.line_total,
+          acquisition_id: acquisition.id,
+          // Only include acquisition_type if it has a value
+          ...(item.acquisition_type ? { acquisition_type: item.acquisition_type } : {}),
+        }))
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error: itemsError } = await (supabase as any)
@@ -159,8 +161,15 @@ export function useUpdateAcquisition() {
         // Insert new items
         if (items.length > 0) {
           const itemsWithAcquisitionId = items.map((item) => ({
-            ...item,
+            // Only include DB fields, exclude UI-only weight fields
+            material_id: item.material_id,
+            quantity: item.quantity,
+            impurities_percent: item.impurities_percent,
+            final_quantity: item.final_quantity,
+            price_per_kg: item.price_per_kg,
+            line_total: item.line_total,
             acquisition_id: id,
+            ...(item.acquisition_type ? { acquisition_type: item.acquisition_type } : {}),
           }))
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,0 +1,687 @@
+LISTA COMPANII DE CAUTAT
+========================
+
+[SUPPLIER] A.E.G. INTERNATIONAL SERVICII SRL
+  ID: 16cf83b1-6f3a-44cc-a535-88fc0a193e76
+  URL: https://www.listafirme.ro/search.asp?q=A.E.G.%20INTERNATIONAL%20SERVICII%20SRL
+
+[SUPPLIER] A.F.CONSULTING SRL
+  ID: 5860a020-ce85-4023-ac12-bccf8187dc5f
+  URL: https://www.listafirme.ro/search.asp?q=A.F.CONSULTING%20SRL
+
+[SUPPLIER] ACTIV AUTO CENTER SRL
+  ID: bf17801f-3aa8-4c54-a7a6-16a46d613a97
+  URL: https://www.listafirme.ro/search.asp?q=ACTIV%20AUTO%20CENTER%20SRL
+
+[SUPPLIER] ADASPED PRESTARI COMERT SRL
+  ID: 9caf543e-061b-4976-93e8-ace5eba90f57
+  URL: https://www.listafirme.ro/search.asp?q=ADASPED%20PRESTARI%20COMERT%20SRL
+
+[SUPPLIER] ADESGO SA
+  ID: 9705fea4-6876-4025-933e-087de195c60b
+  URL: https://www.listafirme.ro/search.asp?q=ADESGO%20SA
+
+[SUPPLIER] ADRIAN PASA SI 5 NEPOTI SRL
+  ID: 791051f1-2979-4b0d-8ae0-76102f5b0746
+  URL: https://www.listafirme.ro/search.asp?q=ADRIAN%20PASA%20SI%205%20NEPOTI%20SRL
+
+[SUPPLIER] AGRONOMICA SRL
+  ID: d2010c3d-7fb9-4579-b459-2a148182ec57
+  URL: https://www.listafirme.ro/search.asp?q=AGRONOMICA%20SRL
+
+[SUPPLIER] AMBAFIN GRUP
+  ID: bc7f7487-5d1e-430d-9f3d-281c9efaf057
+  URL: https://www.listafirme.ro/search.asp?q=AMBAFIN%20GRUP
+
+[SUPPLIER] AMIBLU ROMANIA SRL
+  ID: 07634372-3555-494b-a0fd-3649637dda6a
+  URL: https://www.listafirme.ro/search.asp?q=AMIBLU%20ROMANIA%20SRL
+
+[SUPPLIER] ANDREEA PACK FACTORY
+  ID: 861e9bba-8baf-4bd5-a607-598d1ab86f93
+  URL: https://www.listafirme.ro/search.asp?q=ANDREEA%20PACK%20FACTORY
+
+[SUPPLIER] ANNA PRODUCT PLAST SRL
+  ID: 01b324c5-3329-4242-b4ef-c43644528e76
+  URL: https://www.listafirme.ro/search.asp?q=ANNA%20PRODUCT%20PLAST%20SRL
+
+[SUPPLIER] ARCIF S.A.
+  ID: e0abc31c-7228-400d-9f21-135bf02d5449
+  URL: https://www.listafirme.ro/search.asp?q=ARCIF%20S.A.
+
+[SUPPLIER] ARR
+  ID: e837db59-3215-413b-bf07-f0a41f33f8a1
+  URL: https://www.listafirme.ro/search.asp?q=ARR
+
+[SUPPLIER] ASOC. PROPRIETARI BL.A5
+  ID: 7102efa5-6eb4-4a70-8fe6-376f046f45d8
+  URL: https://www.listafirme.ro/search.asp?q=ASOC.%20PROPRIETARI%20BL.A5
+
+[SUPPLIER] AUTOFRAPI SRL
+  ID: e4a3ba99-01eb-4538-84f4-9242b5686c2a
+  URL: https://www.listafirme.ro/search.asp?q=AUTOFRAPI%20SRL
+
+[SUPPLIER] AUTOUNION TEHNOLOGY SRL
+  ID: e40eb7b0-099a-4386-bcfc-29da50acb389
+  URL: https://www.listafirme.ro/search.asp?q=AUTOUNION%20TEHNOLOGY%20SRL
+
+[SUPPLIER] AXA TRANS CONSTRUCT SRL
+  ID: 72fbef8a-4e17-4069-b187-1b295b48d8dd
+  URL: https://www.listafirme.ro/search.asp?q=AXA%20TRANS%20CONSTRUCT%20SRL
+
+[SUPPLIER] BEJ  EXECUTORI
+  ID: 217f387a-4d55-4d5b-8467-91b1afd3ee8d
+  URL: https://www.listafirme.ro/search.asp?q=BEJ%20%20EXECUTORI
+
+[SUPPLIER] BIOPROJECT WASTE
+  ID: dd8c4807-45a3-4f7f-87de-ff7b3c16868e
+  URL: https://www.listafirme.ro/search.asp?q=BIOPROJECT%20WASTE
+
+[SUPPLIER] BLUE INDUSTRY SRL FURNIZOR
+  ID: f627ad39-6518-4a7a-9f31-d497350c4fd6
+  URL: https://www.listafirme.ro/search.asp?q=BLUE%20INDUSTRY%20SRL%20FURNIZOR
+
+[SUPPLIER] BLUE PLANET SERVICE
+  ID: 6ab921b4-2631-4ebe-8d41-152f040c6fc7
+  URL: https://www.listafirme.ro/search.asp?q=BLUE%20PLANET%20SERVICE
+
+[SUPPLIER] BM GARAGE
+  ID: 879d54ff-baf6-4899-b877-07bb1be8b717
+  URL: https://www.listafirme.ro/search.asp?q=BM%20GARAGE
+
+[SUPPLIER] BRD LEASING
+  ID: f24da6b1-fef3-460b-b4b1-34ef725ccf0d
+  URL: https://www.listafirme.ro/search.asp?q=BRD%20LEASING
+
+[SUPPLIER] BURSA RECYCLING SRL
+  ID: b9b9e7f0-32e6-429c-9245-ab4217998b20
+  URL: https://www.listafirme.ro/search.asp?q=BURSA%20RECYCLING%20SRL
+
+[SUPPLIER] CAMI COMEXIM SRL
+  ID: 8b3984a3-07db-4624-90ae-473cc9f4014d
+  URL: https://www.listafirme.ro/search.asp?q=CAMI%20COMEXIM%20SRL
+
+[SUPPLIER] CARIERE AGREMIN SRL
+  ID: 83defc72-a113-408a-ae0b-3f8b7e72d1f4
+  URL: https://www.listafirme.ro/search.asp?q=CARIERE%20AGREMIN%20SRL
+
+[SUPPLIER] CAROL DAVILA
+  ID: 5981df55-83d0-4551-8d36-c6e54f6662cf
+  URL: https://www.listafirme.ro/search.asp?q=CAROL%20DAVILA
+
+[SUPPLIER] CDA RO STEEL SRL
+  ID: b89f64cb-b380-4b8b-b4a4-919678a6c9d4
+  URL: https://www.listafirme.ro/search.asp?q=CDA%20RO%20STEEL%20SRL
+
+[SUPPLIER] CEZARA IDEAL CONSTRUCT SRL
+  ID: 44748c24-c9ad-41fc-a677-4b06f00c1c1c
+  URL: https://www.listafirme.ro/search.asp?q=CEZARA%20IDEAL%20CONSTRUCT%20SRL
+
+[SUPPLIER] CFR CALATORI BUCURESTI
+  ID: 63cb394e-217e-48a7-b34b-d84afff10479
+  URL: https://www.listafirme.ro/search.asp?q=CFR%20CALATORI%20BUCURESTI
+
+[SUPPLIER] CFR CALATORI PLOIESTI
+  ID: 309549fc-dbab-4c53-bb8c-a9c41b4a4f0f
+  URL: https://www.listafirme.ro/search.asp?q=CFR%20CALATORI%20PLOIESTI
+
+[SUPPLIER] CFR GRIVITA
+  ID: 3351060b-2ce9-44af-9e56-d8882065ff42
+  URL: https://www.listafirme.ro/search.asp?q=CFR%20GRIVITA
+
+[SUPPLIER] CFR MARFA SA
+  ID: 11a44771-25c0-4f49-b3c5-0b273b8acc57
+  URL: https://www.listafirme.ro/search.asp?q=CFR%20MARFA%20SA
+
+[SUPPLIER] CIRCULAR WASTE SERVICES SRL
+  ID: b3c4e1f5-43bb-4d3c-8a3a-37e6730dc134
+  URL: https://www.listafirme.ro/search.asp?q=CIRCULAR%20WASTE%20SERVICES%20SRL
+
+[SUPPLIER] CITY LOGISTICS DEVELOPMENT SRL
+  ID: 43ff5d17-2b3f-4245-9bff-50f3d0fdab67
+  URL: https://www.listafirme.ro/search.asp?q=CITY%20LOGISTICS%20DEVELOPMENT%20SRL
+
+[SUPPLIER] CLEAN LINEN
+  ID: 2ead5989-38bd-4f0d-a426-f1ebff63926f
+  URL: https://www.listafirme.ro/search.asp?q=CLEAN%20LINEN
+
+[SUPPLIER] COFRAJE ALSINA ROMANIA SRL
+  ID: 63383114-cd42-4287-8f34-8b4f6575618b
+  URL: https://www.listafirme.ro/search.asp?q=COFRAJE%20ALSINA%20ROMANIA%20SRL
+
+[SUPPLIER] CRIS GROUP SRL
+  ID: 883518bb-b8b2-4675-a3bf-e6e84eb22aa5
+  URL: https://www.listafirme.ro/search.asp?q=CRIS%20GROUP%20SRL
+
+[SUPPLIER] DE SILVA INTERMED SRL
+  ID: a5773f1a-b711-43c2-9e86-ad1fc49f0ebd
+  URL: https://www.listafirme.ro/search.asp?q=DE%20SILVA%20INTERMED%20SRL
+
+[SUPPLIER] DEDEMAN
+  ID: 4671f96a-81e7-420b-8e9b-3911433e8708
+  URL: https://www.listafirme.ro/search.asp?q=DEDEMAN
+
+[SUPPLIER] DEME MACARALE SRL
+  ID: 578d9b7e-44c1-422a-aa81-35f9eb610a49
+  URL: https://www.listafirme.ro/search.asp?q=DEME%20MACARALE%20SRL
+
+[SUPPLIER] DIMETAL GROUP SERV
+  ID: 29c117f4-b950-4366-ba73-b0dc25e8e781
+  URL: https://www.listafirme.ro/search.asp?q=DIMETAL%20GROUP%20SERV
+
+[SUPPLIER] DN 1 TRANSCOM
+  ID: 72466da6-6299-4e27-909f-8a612ba3396c
+  URL: https://www.listafirme.ro/search.asp?q=DN%201%20TRANSCOM
+
+[SUPPLIER] DOMO CONSTRUCT ECO NEW SRL
+  ID: 05d9e10e-fd44-4bbb-8547-3aca3451ffd5
+  URL: https://www.listafirme.ro/search.asp?q=DOMO%20CONSTRUCT%20ECO%20NEW%20SRL
+
+[SUPPLIER] DSG NORDIC TEAM SRL
+  ID: 139fb2da-5bf6-48cd-9a6a-affc44ccedea
+  URL: https://www.listafirme.ro/search.asp?q=DSG%20NORDIC%20TEAM%20SRL
+
+[SUPPLIER] DUMAR CONSTRUCT PREFABRICATE SRL
+  ID: 8707c99e-4d2e-4a52-96b5-ccb4b6cf61f2
+  URL: https://www.listafirme.ro/search.asp?q=DUMAR%20CONSTRUCT%20PREFABRICATE%20SRL
+
+[SUPPLIER] ECO FEROMET RECYCLING S.R.L.
+  ID: 7379d43d-eacb-4ae2-bdb3-b794eceaf408
+  URL: https://www.listafirme.ro/search.asp?q=ECO%20FEROMET%20RECYCLING%20S.R.L.
+
+[SUPPLIER] ECO FEROMET RECYCLING SRL
+  ID: 823d90c7-ab88-415b-9149-45ccbac09c1c
+  URL: https://www.listafirme.ro/search.asp?q=ECO%20FEROMET%20RECYCLING%20SRL
+
+[SUPPLIER] ECO GREEN 4 TOI
+  ID: 8ee871a6-f8ba-4f60-b935-a7f3c15e468b
+  URL: https://www.listafirme.ro/search.asp?q=ECO%20GREEN%204%20TOI
+
+[SUPPLIER] ECO SAVE RECYCLE SRL
+  ID: fe4ea991-4995-4dca-a0da-b24c477f718a
+  URL: https://www.listafirme.ro/search.asp?q=ECO%20SAVE%20RECYCLE%20SRL
+
+[SUPPLIER] ECOGREEN CONSTRUCT SRL
+  ID: 28351aed-127e-4e38-92d5-705efc5cc364
+  URL: https://www.listafirme.ro/search.asp?q=ECOGREEN%20CONSTRUCT%20SRL
+
+[SUPPLIER] ELBI ELECTRONIC LIGHTING
+  ID: f5cf5358-247a-4d65-8f66-02d2cfc66c36
+  URL: https://www.listafirme.ro/search.asp?q=ELBI%20ELECTRONIC%20LIGHTING
+
+[SUPPLIER] ELECTRONIC WASTE MANAGEMENT SRL
+  ID: 2786fa8d-2879-418b-80cc-0dab3844b45d
+  URL: https://www.listafirme.ro/search.asp?q=ELECTRONIC%20WASTE%20MANAGEMENT%20SRL
+
+[SUPPLIER] ELMET INTERNATIONAL SRL
+  ID: b25a95d1-62f9-4200-acbe-c0367e276d15
+  URL: https://www.listafirme.ro/search.asp?q=ELMET%20INTERNATIONAL%20SRL
+
+[SUPPLIER] EMY DEN TRANS
+  ID: 02d9c655-7a9d-418d-8401-b8e56559b443
+  URL: https://www.listafirme.ro/search.asp?q=EMY%20DEN%20TRANS
+
+[SUPPLIER] ETA BEAUTY
+  ID: 8b698a84-2b6f-4330-9514-baff81fb6e63
+  URL: https://www.listafirme.ro/search.asp?q=ETA%20BEAUTY
+
+[SUPPLIER] FANEATA GASS
+  ID: b9a8dc98-be7a-4823-a679-e68e23c92a7c
+  URL: https://www.listafirme.ro/search.asp?q=FANEATA%20GASS
+
+[SUPPLIER] FIR COM SRL
+  ID: 5a336c60-b29e-4120-9971-53c8adcf90b9
+  URL: https://www.listafirme.ro/search.asp?q=FIR%20COM%20SRL
+
+[SUPPLIER] FLORIMAR COMEX SRL
+  ID: d9e7a156-1908-401d-8da7-aad0f7f3e351
+  URL: https://www.listafirme.ro/search.asp?q=FLORIMAR%20COMEX%20SRL
+
+[SUPPLIER] FOCUS MG
+  ID: a3b4c4b8-3de5-4add-9da6-7aaf3855ba38
+  URL: https://www.listafirme.ro/search.asp?q=FOCUS%20MG
+
+[SUPPLIER] FROMMERPRINT SRL
+  ID: 0e816a52-9fb0-48c3-934a-d4c0b386b28b
+  URL: https://www.listafirme.ro/search.asp?q=FROMMERPRINT%20SRL
+
+[SUPPLIER] GABRIKOM
+  ID: 6397fc87-9d57-4654-bd98-0d600e045acb
+  URL: https://www.listafirme.ro/search.asp?q=GABRIKOM
+
+[SUPPLIER] GALVA METAL INTERNATIONAL SRL
+  ID: 63bd6dfb-9d69-4663-abb0-c6ae0e524607
+  URL: https://www.listafirme.ro/search.asp?q=GALVA%20METAL%20INTERNATIONAL%20SRL
+
+[SUPPLIER] GARMIAN PROVIDER CONCEPT SRL
+  ID: a3409ff6-4369-4767-aec8-c49a13e3469f
+  URL: https://www.listafirme.ro/search.asp?q=GARMIAN%20PROVIDER%20CONCEPT%20SRL
+
+[SUPPLIER] GENESIS DEVELOPMENT
+  ID: 5fbace3f-dd58-4226-980f-a6dd8cd2dce3
+  URL: https://www.listafirme.ro/search.asp?q=GENESIS%20DEVELOPMENT
+
+[SUPPLIER] GLOBAL MIGRO SERVICE SRL
+  ID: 3c2f4e89-5982-4d7c-b04d-1b93642d234f
+  URL: https://www.listafirme.ro/search.asp?q=GLOBAL%20MIGRO%20SERVICE%20SRL
+
+[SUPPLIER] GLOBE GROUND ROMANIA SRL
+  ID: e75c49ad-fd99-43c2-8e76-f36bd1cee8fc
+  URL: https://www.listafirme.ro/search.asp?q=GLOBE%20GROUND%20ROMANIA%20SRL
+
+[SUPPLIER] GLOBO INTERNATIONAL IMPORT EXPORT SRL
+  ID: 45775eac-e3b0-4580-87cf-d22cab62ed6f
+  URL: https://www.listafirme.ro/search.asp?q=GLOBO%20INTERNATIONAL%20IMPORT%20EXPORT%20SRL
+
+[SUPPLIER] GREEN INDUSTRY SRL
+  ID: ab4ddf85-3f17-44c4-bd85-f23931d3e533
+  URL: https://www.listafirme.ro/search.asp?q=GREEN%20INDUSTRY%20SRL
+
+[SUPPLIER] GREEN KRAFT SRL
+  ID: a7fd7241-430f-4234-baef-f0be30f7ca74
+  URL: https://www.listafirme.ro/search.asp?q=GREEN%20KRAFT%20SRL
+
+[SUPPLIER] GSF AUTO CONCEPT
+  ID: c4b9bd73-da85-42c6-801f-aa47c4d5fed2
+  URL: https://www.listafirme.ro/search.asp?q=GSF%20AUTO%20CONCEPT
+
+[SUPPLIER] HIRSCH POROZELL S.R.L.
+  ID: 713ca050-0669-4c78-b578-cfa9701c578c
+  URL: https://www.listafirme.ro/search.asp?q=HIRSCH%20POROZELL%20S.R.L.
+
+[SUPPLIER] HUNTER DOUGLAS ROMANIA SRL
+  ID: 13003aa4-ab74-4324-b8c2-7e79f37db286
+  URL: https://www.listafirme.ro/search.asp?q=HUNTER%20DOUGLAS%20ROMANIA%20SRL
+
+[SUPPLIER] HYDROSCAND
+  ID: 5bfa5b29-16ae-4eec-99d8-67e797fea146
+  URL: https://www.listafirme.ro/search.asp?q=HYDROSCAND
+
+[SUPPLIER] I N S P
+  ID: 1589fb25-74ff-4b99-8612-a5474303a766
+  URL: https://www.listafirme.ro/search.asp?q=I%20N%20S%20P
+
+[SUPPLIER] ILMAR TRANS SRL
+  ID: 3c7049ee-7f93-4dce-8616-5c2e24279280
+  URL: https://www.listafirme.ro/search.asp?q=ILMAR%20TRANS%20SRL
+
+[SUPPLIER] IMR INNOVATIVE METAL RECYCLING SRL
+  ID: 39e95823-3777-4864-a09b-d2fa40314a10
+  URL: https://www.listafirme.ro/search.asp?q=IMR%20INNOVATIVE%20METAL%20RECYCLING%20SRL
+
+[SUPPLIER] INCDFLPR RA
+  ID: 413ab0aa-ad5e-441e-9acf-bdf7471de40a
+  URL: https://www.listafirme.ro/search.asp?q=INCDFLPR%20RA
+
+[SUPPLIER] INDECO GRUP SRL
+  ID: c67f0556-acf1-41e6-9b92-3b966ac74717
+  URL: https://www.listafirme.ro/search.asp?q=INDECO%20GRUP%20SRL
+
+[SUPPLIER] INSPECTORATUL JUDETEAN POLITIE PRAHOVA
+  ID: 4771a95e-2f5b-4b59-8b98-8a7da4612d08
+  URL: https://www.listafirme.ro/search.asp?q=INSPECTORATUL%20JUDETEAN%20POLITIE%20PRAHOVA
+
+[SUPPLIER] INTAX TRADING SRL
+  ID: 40827d1c-75fa-41bb-bf3c-d2fa000a45dd
+  URL: https://www.listafirme.ro/search.asp?q=INTAX%20TRADING%20SRL
+
+[SUPPLIER] INTERSOFEX SRL
+  ID: 9a63ad67-24eb-46d0-89f1-6384ce002fda
+  URL: https://www.listafirme.ro/search.asp?q=INTERSOFEX%20SRL
+
+[SUPPLIER] JNO GROUP
+  ID: 032a1b54-83ec-43a2-b85b-7994b80c927e
+  URL: https://www.listafirme.ro/search.asp?q=JNO%20GROUP
+
+[SUPPLIER] JOKER LOGISTIC TRUCK SRL
+  ID: e7502fe7-fc23-4990-becb-96fb64e9edca
+  URL: https://www.listafirme.ro/search.asp?q=JOKER%20LOGISTIC%20TRUCK%20SRL
+
+[SUPPLIER] KLM PRINT PRODUCTION SRL
+  ID: d18ad9e4-605d-4043-865b-4fcfc3e2d0c4
+  URL: https://www.listafirme.ro/search.asp?q=KLM%20PRINT%20PRODUCTION%20SRL
+
+[SUPPLIER] KONTAB EXPERT
+  ID: 9e44db57-c916-4f7a-a556-6a3bbdc0dbab
+  URL: https://www.listafirme.ro/search.asp?q=KONTAB%20EXPERT
+
+[SUPPLIER] KRONOSPAN TRADING SRL
+  ID: cf1c078b-2cc7-49db-b4a7-47ec2640ddab
+  URL: https://www.listafirme.ro/search.asp?q=KRONOSPAN%20TRADING%20SRL
+
+[SUPPLIER] LAROMET
+  ID: ef8f8c7a-48ff-41e6-8652-d829465414fe
+  URL: https://www.listafirme.ro/search.asp?q=LAROMET
+
+[SUPPLIER] LICEUL TEORETIC HORIA HULUBEI
+  ID: 25992efc-603e-4db5-bf45-56cb377d234c
+  URL: https://www.listafirme.ro/search.asp?q=LICEUL%20TEORETIC%20HORIA%20HULUBEI
+
+[SUPPLIER] LORMAR SRL
+  ID: 340f5f29-e712-49fe-91f7-a2fbb7868422
+  URL: https://www.listafirme.ro/search.asp?q=LORMAR%20SRL
+
+[SUPPLIER] LUK MONTAJ CONSTRUCT SRL
+  ID: ddcf2d91-ad79-4544-88d1-51a5da7b14ab
+  URL: https://www.listafirme.ro/search.asp?q=LUK%20MONTAJ%20CONSTRUCT%20SRL
+
+[SUPPLIER] LUKOIL
+  ID: 128eec65-ee3a-4eed-9b9e-053f76db0958
+  URL: https://www.listafirme.ro/search.asp?q=LUKOIL
+
+[SUPPLIER] MADHOUSE METAL CONCEPT SRL
+  ID: 8c91301d-1a8d-4754-9da8-ecb713dd477f
+  URL: https://www.listafirme.ro/search.asp?q=MADHOUSE%20METAL%20CONCEPT%20SRL
+
+[SUPPLIER] MAGURELE
+  ID: 06c82d9e-ad27-4397-ad31-fe38992cc172
+  URL: https://www.listafirme.ro/search.asp?q=MAGURELE
+
+[SUPPLIER] MALIV GROUP
+  ID: 650ae73a-d489-495a-b73c-dd40217a581d
+  URL: https://www.listafirme.ro/search.asp?q=MALIV%20GROUP
+
+[SUPPLIER] MALURA BUSINESS SRL
+  ID: b1097109-aa94-4b54-b114-2f938ddd2fed
+  URL: https://www.listafirme.ro/search.asp?q=MALURA%20BUSINESS%20SRL
+
+[SUPPLIER] MAR PRODUCT CONSTRUCT
+  ID: dd1e88e7-32e6-4407-9a83-c3b9e6fbcffa
+  URL: https://www.listafirme.ro/search.asp?q=MAR%20PRODUCT%20CONSTRUCT
+
+[SUPPLIER] MARIO
+  ID: 8a0dfb74-54ed-4e7e-b743-5408062230b1
+  URL: https://www.listafirme.ro/search.asp?q=MARIO
+
+[SUPPLIER] MARMO G C SRL
+  ID: addc1977-51a1-4702-8d18-53a2b3a53fde
+  URL: https://www.listafirme.ro/search.asp?q=MARMO%20G%20C%20SRL
+
+[SUPPLIER] MARSH BROKER
+  ID: bc31c855-4114-4835-a578-331562b8dcba
+  URL: https://www.listafirme.ro/search.asp?q=MARSH%20BROKER
+
+[SUPPLIER] MECANICA SA
+  ID: cfd06a97-4aad-4571-a171-930f21c43672
+  URL: https://www.listafirme.ro/search.asp?q=MECANICA%20SA
+
+[SUPPLIER] MEDICAL TERRA
+  ID: b1075fde-547c-43fc-8cee-adccd10910b4
+  URL: https://www.listafirme.ro/search.asp?q=MEDICAL%20TERRA
+
+[SUPPLIER] METAL COMPLEX ELEMENT SRL
+  ID: e5223138-f790-475c-810c-116c47c3da82
+  URL: https://www.listafirme.ro/search.asp?q=METAL%20COMPLEX%20ELEMENT%20SRL
+
+[SUPPLIER] METAL HOUSE SILNEF SRL
+  ID: ffd1ea2d-3e22-48c7-aace-b44a3cda7eb3
+  URL: https://www.listafirme.ro/search.asp?q=METAL%20HOUSE%20SILNEF%20SRL
+
+[SUPPLIER] METALCOLECT TRADING SRL FURNIZOR
+  ID: 7c9c0c8d-7a9f-43ec-8338-7ff922b41bb2
+  URL: https://www.listafirme.ro/search.asp?q=METALCOLECT%20TRADING%20SRL%20FURNIZOR
+
+[SUPPLIER] METAV SA
+  ID: 53a81093-11d4-49cd-942b-2561485eb40b
+  URL: https://www.listafirme.ro/search.asp?q=METAV%20SA
+
+[SUPPLIER] METRIC PRODUCTION SRL
+  ID: ebd1d99e-355c-45ad-a0dd-d43673f3047d
+  URL: https://www.listafirme.ro/search.asp?q=METRIC%20PRODUCTION%20SRL
+
+[SUPPLIER] MHS TRUCK SERVICE
+  ID: 575952ac-1f7c-4d59-b8a7-1cf2dfc4e402
+  URL: https://www.listafirme.ro/search.asp?q=MHS%20TRUCK%20SERVICE
+
+[SUPPLIER] MIHAILESTI
+  ID: d116509d-e4c1-436d-81b4-d0b3e6d11a15
+  URL: https://www.listafirme.ro/search.asp?q=MIHAILESTI
+
+[SUPPLIER] MINA METAL COLLECT SRL
+  ID: eefa4972-0e18-428d-bf1a-228d46fcd09b
+  URL: https://www.listafirme.ro/search.asp?q=MINA%20METAL%20COLLECT%20SRL
+
+[SUPPLIER] MINISTERUL SANATATII
+  ID: 7824ba7a-b8f9-4abc-8012-3b8596e219c7
+  URL: https://www.listafirme.ro/search.asp?q=MINISTERUL%20SANATATII
+
+[SUPPLIER] MOBILE AUTO INTERNATIONAL SRL
+  ID: e446bb6f-db75-4619-a68e-20d2d9455029
+  URL: https://www.listafirme.ro/search.asp?q=MOBILE%20AUTO%20INTERNATIONAL%20SRL
+
+[SUPPLIER] MODERN BUSINESS SRL
+  ID: 92c2ef0d-fde7-4abf-aeb4-807ed89f7fe4
+  URL: https://www.listafirme.ro/search.asp?q=MODERN%20BUSINESS%20SRL
+
+[SUPPLIER] MOTOR GRIG SRL
+  ID: 63f3943e-4570-4efc-a1f9-c4aa4de96311
+  URL: https://www.listafirme.ro/search.asp?q=MOTOR%20GRIG%20SRL
+
+[SUPPLIER] MSC RUBBER RECYCLING SRL
+  ID: 120f0ad1-72d4-4cb7-b5e5-5614afcf6cd4
+  URL: https://www.listafirme.ro/search.asp?q=MSC%20RUBBER%20RECYCLING%20SRL
+
+[SUPPLIER] MUNICIPIUL VASLUI
+  ID: 8a1df029-078d-4e0a-9fb2-88624c6f8a0b
+  URL: https://www.listafirme.ro/search.asp?q=MUNICIPIUL%20VASLUI
+
+[SUPPLIER] NESTERIOR DESIGN SRL
+  ID: 7b4ac791-5640-468e-86f7-0f25d59a7d9b
+  URL: https://www.listafirme.ro/search.asp?q=NESTERIOR%20DESIGN%20SRL
+
+[SUPPLIER] NEW SPEED GREEN SRL
+  ID: 6e1f1451-b20e-4f4c-b868-7b0e5481b24d
+  URL: https://www.listafirme.ro/search.asp?q=NEW%20SPEED%20GREEN%20SRL
+
+[SUPPLIER] NUCLEAR&VACUUM
+  ID: 652ffd93-a82f-4d66-8c54-2de45646da74
+  URL: https://www.listafirme.ro/search.asp?q=NUCLEAR%26VACUUM
+
+[SUPPLIER] NUSCO IMOBILIARA SA
+  ID: 4ffb6f09-cba8-4b0f-adb6-01bd4cadce83
+  URL: https://www.listafirme.ro/search.asp?q=NUSCO%20IMOBILIARA%20SA
+
+[SUPPLIER] OLARIU CONSTRUCT SRL
+  ID: b8ccd9ed-6a16-4d26-836c-25635d450039
+  URL: https://www.listafirme.ro/search.asp?q=OLARIU%20CONSTRUCT%20SRL
+
+[SUPPLIER] OTECH
+  ID: 9a3adcc5-a4f8-4407-a5fc-1abb7fbcb9d6
+  URL: https://www.listafirme.ro/search.asp?q=OTECH
+
+[SUPPLIER] PANEBO GAZ SRL
+  ID: fd881807-7eb3-4188-8c2e-f0fd9fcb4313
+  URL: https://www.listafirme.ro/search.asp?q=PANEBO%20GAZ%20SRL
+
+[SUPPLIER] PIESE SH BMW SRL
+  ID: 40971966-78af-46b4-808a-54c24dfea501
+  URL: https://www.listafirme.ro/search.asp?q=PIESE%20SH%20BMW%20SRL
+
+[SUPPLIER] PINUM DOORS & WINDOWS SRL
+  ID: 55b118e9-b2bb-4cc0-b42c-382da59ab70b
+  URL: https://www.listafirme.ro/search.asp?q=PINUM%20DOORS%20%26%20WINDOWS%20SRL
+
+[SUPPLIER] PIPERA SA
+  ID: eea0126e-2101-4565-a897-3313cb8ecfb0
+  URL: https://www.listafirme.ro/search.asp?q=PIPERA%20SA
+
+[SUPPLIER] PLASTIC LEGNO ROMANIA SRL
+  ID: d8980acb-bfcd-4b07-9939-303265579aa8
+  URL: https://www.listafirme.ro/search.asp?q=PLASTIC%20LEGNO%20ROMANIA%20SRL
+
+[SUPPLIER] PREST CONSTRUCT CO SRL
+  ID: 39156b7b-4b9f-4482-9664-47a3254aecf6
+  URL: https://www.listafirme.ro/search.asp?q=PREST%20CONSTRUCT%20CO%20SRL
+
+[SUPPLIER] PRIMARIA ORAS MAGURELE
+  ID: b9935e4c-c3e9-4c53-a08f-a6388caec492
+  URL: https://www.listafirme.ro/search.asp?q=PRIMARIA%20ORAS%20MAGURELE
+
+[SUPPLIER] PRO BRANDS DISTRIBUTION SRL
+  ID: 15edf815-efbc-41bb-a77f-3984cce26a92
+  URL: https://www.listafirme.ro/search.asp?q=PRO%20BRANDS%20DISTRIBUTION%20SRL
+
+[SUPPLIER] R.R.R METAL SRL
+  ID: 77e67f8a-ef40-49df-b9e2-fa9958eb7cb9
+  URL: https://www.listafirme.ro/search.asp?q=R.R.R%20METAL%20SRL
+
+[SUPPLIER] RAPPS
+  ID: 0323951f-dec1-4d54-b694-5fbca4a44a91
+  URL: https://www.listafirme.ro/search.asp?q=RAPPS
+
+[SUPPLIER] REAL TECO SRL
+  ID: f352f04a-d77c-48d0-b6b5-c7a3fe53e3a7
+  URL: https://www.listafirme.ro/search.asp?q=REAL%20TECO%20SRL
+
+[SUPPLIER] REMAT JILAVA SRL
+  ID: b9c09916-5c04-482a-8ad7-4d39b638489a
+  URL: https://www.listafirme.ro/search.asp?q=REMAT%20JILAVA%20SRL
+
+[SUPPLIER] RISK POINT SERVICII SRL
+  ID: 0523763b-c7e2-47cf-a67c-d2035862ac08
+  URL: https://www.listafirme.ro/search.asp?q=RISK%20POINT%20SERVICII%20SRL
+
+[SUPPLIER] ROM CONTAINER RENT&SALE SRL
+  ID: 4af6bd38-4524-4633-bbda-502ff0b1c277
+  URL: https://www.listafirme.ro/search.asp?q=ROM%20CONTAINER%20RENT%26SALE%20SRL
+
+[SUPPLIER] ROM CONTAINER SRL
+  ID: 734a9659-7b80-4b01-90d1-a6e8472106c4
+  URL: https://www.listafirme.ro/search.asp?q=ROM%20CONTAINER%20SRL
+
+[SUPPLIER] ROMAERO SA
+  ID: 22afe0e4-2b16-4823-b88c-e2136c1aeefd
+  URL: https://www.listafirme.ro/search.asp?q=ROMAERO%20SA
+
+[SUPPLIER] SAMSON CONTROL SRL
+  ID: 795ec40e-5c64-4ae6-a8ac-ba554e45e658
+  URL: https://www.listafirme.ro/search.asp?q=SAMSON%20CONTROL%20SRL
+
+[SUPPLIER] SC ECOWES SRL
+  ID: ea59f337-19c6-4ed1-b8f2-5bfb93d14427
+  URL: https://www.listafirme.ro/search.asp?q=SC%20ECOWES%20SRL
+
+[SUPPLIER] SELCAR INTERNATIONAL SRL
+  ID: c1589672-55b8-40aa-9928-01d374e414f7
+  URL: https://www.listafirme.ro/search.asp?q=SELCAR%20INTERNATIONAL%20SRL
+
+[SUPPLIER] SELENA EUROMGA SRL
+  ID: cf0747c9-68dc-4b60-8813-555558afcd69
+  URL: https://www.listafirme.ro/search.asp?q=SELENA%20EUROMGA%20SRL
+
+[SUPPLIER] SEMA REAL ESTATE SA
+  ID: 96d38ca6-af48-49f6-91fd-9c2a5d6d5ad8
+  URL: https://www.listafirme.ro/search.asp?q=SEMA%20REAL%20ESTATE%20SA
+
+[SUPPLIER] SMART AUTO INVEST SRL
+  ID: 56b52ebb-bcef-4eae-8615-88be8857c4f1
+  URL: https://www.listafirme.ro/search.asp?q=SMART%20AUTO%20INVEST%20SRL
+
+[SUPPLIER] SMART BALANCE TEHNOLOGY SRL
+  ID: d65e64af-610b-4f01-82b1-fe088dc16d7c
+  URL: https://www.listafirme.ro/search.asp?q=SMART%20BALANCE%20TEHNOLOGY%20SRL
+
+[SUPPLIER] SNTGN TRANSGAZ SA
+  ID: 540e2b57-3785-4cf5-959a-8cfd0dfc0bc6
+  URL: https://www.listafirme.ro/search.asp?q=SNTGN%20TRANSGAZ%20SA
+
+[SUPPLIER] SOFIA GEORGIANA TRANS
+  ID: c17aeaf1-9193-4b5d-9836-80f03736319b
+  URL: https://www.listafirme.ro/search.asp?q=SOFIA%20GEORGIANA%20TRANS
+
+[SUPPLIER] SPECTRUM INDUSTRIES SRL
+  ID: 18050e1a-f9ba-4f1e-80b1-cabf8f5b2134
+  URL: https://www.listafirme.ro/search.asp?q=SPECTRUM%20INDUSTRIES%20SRL
+
+[SUPPLIER] SR PLAST TECH SRL
+  ID: b58f9722-6421-4941-8b8d-b5457bd7842e
+  URL: https://www.listafirme.ro/search.asp?q=SR%20PLAST%20TECH%20SRL
+
+[SUPPLIER] STERICYCLE ROMANIA SRL
+  ID: 2cb0508a-e151-46b3-aaad-5fd84425606b
+  URL: https://www.listafirme.ro/search.asp?q=STERICYCLE%20ROMANIA%20SRL
+
+[SUPPLIER] SUNINVEST IMOBILIARE SRL
+  ID: b575463e-9476-4b7d-9f1f-745eea2dd706
+  URL: https://www.listafirme.ro/search.asp?q=SUNINVEST%20IMOBILIARE%20SRL
+
+[SUPPLIER] TERMOFOREST SRL
+  ID: 9a64bba0-6cb1-42f8-b4b5-be50ac6cd5e3
+  URL: https://www.listafirme.ro/search.asp?q=TERMOFOREST%20SRL
+
+[SUPPLIER] TOMA RECYCLING SRL
+  ID: a5b9504b-09c2-4eab-8308-7b4eb7e19bca
+  URL: https://www.listafirme.ro/search.asp?q=TOMA%20RECYCLING%20SRL
+
+[SUPPLIER] UNICTASTE SRL
+  ID: 209fa7de-2629-437b-8b63-276f3d065512
+  URL: https://www.listafirme.ro/search.asp?q=UNICTASTE%20SRL
+
+[SUPPLIER] VANCOS RECYCLING SRL
+  ID: 72ddb68f-9919-41f5-84ac-a41bf9ad6b78
+  URL: https://www.listafirme.ro/search.asp?q=VANCOS%20RECYCLING%20SRL
+
+[SUPPLIER] VEST GRUP INSTAL SRL
+  ID: c89a3146-e636-42e3-b2bc-ab40dc00e29b
+  URL: https://www.listafirme.ro/search.asp?q=VEST%20GRUP%20INSTAL%20SRL
+
+[SUPPLIER] WEELBAEX
+  ID: d04a2d85-6c34-43ca-96d5-2ae50ffd9233
+  URL: https://www.listafirme.ro/search.asp?q=WEELBAEX
+
+[CLIENT] ABKO SRL
+  ID: 432d2450-f035-463a-9527-a3beb9df083a
+  URL: https://www.listafirme.ro/search.asp?q=ABKO%20SRL
+
+[CLIENT] BLUE INDUSTRY SRL
+  ID: 576b5055-1ab2-49c2-8ce2-368954fa2252
+  URL: https://www.listafirme.ro/search.asp?q=BLUE%20INDUSTRY%20SRL
+
+[CLIENT] DEEE MIHAILESTI
+  ID: c26da6e9-d6c6-4474-bf5f-c82c78a018c1
+  URL: https://www.listafirme.ro/search.asp?q=DEEE%20MIHAILESTI
+
+[CLIENT] ECO FIRE SISTEMS SRL
+  ID: d09cc97d-4075-4f61-a11e-bbb6d56194f2
+  URL: https://www.listafirme.ro/search.asp?q=ECO%20FIRE%20SISTEMS%20SRL
+
+[CLIENT] EUROPE WASTE MANAGEMENT SRL
+  ID: 37851238-46a7-464f-8f6b-c34f41411bba
+  URL: https://www.listafirme.ro/search.asp?q=EUROPE%20WASTE%20MANAGEMENT%20SRL
+
+[CLIENT] GREENWEEE INTERNATIONAL SA
+  ID: 2ecb45c8-638c-46a4-9aa4-9ddb9ee363ed
+  URL: https://www.listafirme.ro/search.asp?q=GREENWEEE%20INTERNATIONAL%20SA
+
+[CLIENT] RAVEMI PRO SRL RADU
+  ID: 6ceb085f-5ab8-4090-ba8d-f5850003ab40
+  URL: https://www.listafirme.ro/search.asp?q=RAVEMI%20PRO%20SRL%20RADU
+
+[CLIENT] REMAT BUCURESTI SUD
+  ID: 25538b1c-381c-4814-a83e-4bf701fa24cc
+  URL: https://www.listafirme.ro/search.asp?q=REMAT%20BUCURESTI%20SUD
+
+[CLIENT] ROMRECYCLING SRL
+  ID: 1b3c0f82-8bc1-486a-b300-d5a70c6ce011
+  URL: https://www.listafirme.ro/search.asp?q=ROMRECYCLING%20SRL
+
+[CLIENT] SILCOTUB S.A.
+  ID: 8f5d3327-cf4f-4f3d-b9ec-4b025397dd40
+  URL: https://www.listafirme.ro/search.asp?q=SILCOTUB%20S.A.
+
+[CLIENT] SORIN DEEE
+  ID: c3e9c9d7-ef20-4d6a-8b1c-2f8281f742aa
+  URL: https://www.listafirme.ro/search.asp?q=SORIN%20DEEE
+
+[CLIENT] TERRA OIL RECYCLING SRL
+  ID: a0b10fee-287a-4e32-b82c-04d19ca9ffce
+  URL: https://www.listafirme.ro/search.asp?q=TERRA%20OIL%20RECYCLING%20SRL
+
+[CLIENT] UGJK SRL
+  ID: 33f346e5-0dc6-4587-8d24-c4910413b259
+  URL: https://www.listafirme.ro/search.asp?q=UGJK%20SRL
+
+[CLIENT] VANZARI CURTE
+  ID: 9a81a3a0-bea3-4dad-a94a-467cbd1e556b
+  URL: https://www.listafirme.ro/search.asp?q=VANZARI%20CURTE
+

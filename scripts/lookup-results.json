@@ -1,0 +1,470 @@
+[
+  {
+    "id": "16cf83b1-6f3a-44cc-a535-88fc0a193e76",
+    "name": "A.E.G. INTERNATIONAL SERVICII SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "17285514",
+      "reg_com": "J40/5619/2005",
+      "address": "Intr. Simbolului 11, Bl. 1, Sc. 4, Et. 1, Ap. 67",
+      "city": "Sectorul 3",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "4671f96a-81e7-420b-8e9b-3911433e8708",
+    "name": "DEDEMAN",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "2816464",
+      "reg_com": "J04/2621/1992",
+      "address": "Str. Alexei Tolstoi 8",
+      "city": "Bacau",
+      "county": "Bacau"
+    }
+  },
+  {
+    "id": "11a44771-25c0-4f49-b3c5-0b273b8acc57",
+    "name": "CFR MARFA SA",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "11054537",
+      "reg_com": "J40/9775/1998",
+      "address": "Bdul. Dinicu Golescu 38",
+      "city": "Sectorul 1",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "b3c4e1f5-43bb-4d3c-8a3a-37e6730dc134",
+    "name": "CIRCULAR WASTE SERVICES SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "43244904",
+      "reg_com": "J40/14248/2020",
+      "address": "Str. Ropotului 119, Et. 1, CAM. 9",
+      "city": "Sectorul 2",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "43ff5d17-2b3f-4245-9bff-50f3d0fdab67",
+    "name": "CITY LOGISTICS DEVELOPMENT SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "45546542",
+      "reg_com": "J40/1465/2022",
+      "address": "Str. Biharia 67-77, CORP R, Et. 1, Ap. BIR. 6",
+      "city": "Sectorul 1",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "63383114-cd42-4287-8f34-8b4f6575618b",
+    "name": "COFRAJE ALSINA ROMANIA SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "23197417",
+      "reg_com": "J52/445/2009",
+      "address": "Sos. Giurgiului 1",
+      "city": "Ghimpati",
+      "county": "Giurgiu"
+    }
+  },
+  {
+    "id": "a5773f1a-b711-43c2-9e86-ad1fc49f0ebd",
+    "name": "DE SILVA INTERMED SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "476668",
+      "reg_com": "J40/24513/1992",
+      "address": "Str. Daniel Danielopolu 44 A, CORP C2",
+      "city": "Sectorul 1",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "bf17801f-3aa8-4c54-a7a6-16a46d613a97",
+    "name": "ACTIV AUTO CENTER SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "42404977",
+      "reg_com": "J40/3801/2020",
+      "address": "Str. George Calboreanu 2, Bl. 120, Sc. A, Et. 5, Ap. 24",
+      "city": "Sectorul 6",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "9705fea4-6876-4025-933e-087de195c60b",
+    "name": "ADESGO SA",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "367911",
+      "reg_com": "J40/5892/1991",
+      "address": "Intr. Badeni 6, Bl. M9, Sc. D, Et. 2, Ap. 36",
+      "city": "Sectorul 3",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "07634372-3555-494b-a0fd-3649637dda6a",
+    "name": "AMIBLU ROMANIA SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "15016595",
+      "reg_com": "J23/1116/2004",
+      "address": "Drum Mare 2",
+      "city": "Clinceni",
+      "county": "Ilfov"
+    }
+  },
+  {
+    "id": "b9b9e7f0-32e6-429c-9245-ab4217998b20",
+    "name": "BURSA RECYCLING SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "32928079",
+      "reg_com": "J52/137/2014",
+      "address": "Sos. Vasile Militaru 262 Bl. C1",
+      "city": "Sat Dobreni",
+      "county": "Giurgiu"
+    }
+  },
+  {
+    "id": "8b3984a3-07db-4624-90ae-473cc9f4014d",
+    "name": "CAMI COMEXIM SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "359315",
+      "reg_com": "J40/25032/1992",
+      "address": "Str. Automatizarii 23",
+      "city": "Sectorul 1",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "83defc72-a113-408a-ae0b-3f8b7e72d1f4",
+    "name": "CARIERE AGREMIN SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "15020073",
+      "reg_com": "J23/2430/2002",
+      "address": "Sos. De Centura 2-8",
+      "city": "Bragadiru",
+      "county": "Ilfov"
+    }
+  },
+  {
+    "id": "b89f64cb-b380-4b8b-b4a4-919678a6c9d4",
+    "name": "CDA RO STEEL SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "33582991",
+      "reg_com": "J23/2676/2014",
+      "address": "Prel. Ghencea 45, Bl. C3, Sc. A, Et. MANS., Ap. 46",
+      "city": "Bragadiru",
+      "county": "Ilfov"
+    }
+  },
+  {
+    "id": "44748c24-c9ad-41fc-a677-4b06f00c1c1c",
+    "name": "CEZARA IDEAL CONSTRUCT SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "30245703",
+      "reg_com": "J40/4078/2012",
+      "address": "Drum Valea Calmatuiului 7-21, Bl. 1, Sc. 1, Et. S, Ap. S1",
+      "city": "Sectorul 6",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "578d9b7e-44c1-422a-aa81-35f9eb610a49",
+    "name": "DEME MACARALE SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "6073087",
+      "reg_com": "J05/3029/1994",
+      "address": "Str. Czaran Gyula 9",
+      "city": "Oradea",
+      "county": "Bihor"
+    }
+  },
+  {
+    "id": "7379d43d-eacb-4ae2-bdb3-b794eceaf408",
+    "name": "ECO FEROMET RECYCLING S.R.L.",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "41618468",
+      "reg_com": "J40/11922/2019",
+      "address": "Str. Paltinoasa 10, Et. P",
+      "city": "Sectorul 5",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "823d90c7-ab88-415b-9149-45ccbac09c1c",
+    "name": "ECO FEROMET RECYCLING SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "41618468",
+      "reg_com": "J40/11922/2019",
+      "address": "Str. Paltinoasa 10, Et. P",
+      "city": "Sectorul 5",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "b25a95d1-62f9-4200-acbe-c0367e276d15",
+    "name": "ELMET INTERNATIONAL SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "10840889",
+      "reg_com": "J04/741/1998",
+      "address": "Str. Constantei 1",
+      "city": "Bacau",
+      "county": "Bacau"
+    }
+  },
+  {
+    "id": "63bd6dfb-9d69-4663-abb0-c6ae0e524607",
+    "name": "GALVA METAL INTERNATIONAL SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "27644194",
+      "reg_com": "J40/10423/2010",
+      "address": "Str. Agatha Barsescu 15 B, Et. 1",
+      "city": "Sectorul 3",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "713ca050-0669-4c78-b578-cfa9701c578c",
+    "name": "HIRSCH POROZELL S.R.L.",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "18198580",
+      "reg_com": "J12/4272/2005",
+      "address": "368 A",
+      "city": "Sat Rascruci",
+      "county": "Cluj"
+    }
+  },
+  {
+    "id": "13003aa4-ab74-4324-b8c2-7e79f37db286",
+    "name": "HUNTER DOUGLAS ROMANIA SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "17051777",
+      "reg_com": "J40/21097/2004",
+      "address": "Bdul. Basarabia 80, Et. 1",
+      "city": "Sectorul 2",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "cf1c078b-2cc7-49db-b4a7-47ec2640ddab",
+    "name": "KRONOSPAN TRADING SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "11894313",
+      "reg_com": "J01/903/2018",
+      "address": "Str. Mihail Kogalniceanu 59, Et. 1, CAM. 1/12",
+      "city": "Sebes",
+      "county": "Alba"
+    }
+  },
+  {
+    "id": "9caf543e-061b-4976-93e8-ace5eba90f57",
+    "name": "ADASPED PRESTARI COMERT SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "2834983",
+      "reg_com": "J40/27609/1992",
+      "address": "Piata Unirii 1, Et. 5, SP. C150",
+      "city": "Sectorul 3",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "791051f1-2979-4b0d-8ae0-76102f5b0746",
+    "name": "ADRIAN PASA SI 5 NEPOTI SRL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "42616694",
+      "reg_com": "J23/2125/2020",
+      "address": "Sos. Centurii 13",
+      "city": "Bragadiru",
+      "county": "Ilfov"
+    }
+  },
+  {
+    "id": "53a81093-11d4-49cd-942b-2561485eb40b",
+    "name": "METAV SA",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "16036329",
+      "reg_com": "J40/363/2004",
+      "address": "Str. Biharia 67-77",
+      "city": "Sectorul 1",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "22afe0e4-2b16-4823-b88c-e2136c1aeefd",
+    "name": "ROMAERO SA",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "1576401",
+      "reg_com": "J40/3940/1991",
+      "address": "Bdul. Ficusului 44",
+      "city": "Sectorul 1",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "4ffb6f09-cba8-4b0f-adb6-01bd4cadce83",
+    "name": "NUSCO IMOBILIARA SA",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "10061498",
+      "reg_com": "J40/10478/1997",
+      "address": "Sos. Pipera 48, Bl. PAV. ADM., Et. 2, CAM. 20",
+      "city": "Sectorul 2",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "eea0126e-2101-4565-a897-3313cb8ecfb0",
+    "name": "PIPERA SA",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "1014",
+      "reg_com": "J40/16/1990",
+      "address": "Sos. Pipera 48",
+      "city": "Sectorul 2",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "2ecb45c8-638c-46a4-9aa4-9ddb9ee363ed",
+    "name": "GREENWEEE INTERNATIONAL SA",
+    "type": "client",
+    "status": "found",
+    "data": {
+      "cui": "20571923",
+      "reg_com": "J10/55/2007",
+      "address": "Ferma Frasinu",
+      "city": "Tintesti",
+      "county": "Buzau"
+    }
+  },
+  {
+    "id": "8f5d3327-cf4f-4f3d-b9ec-4b025397dd40",
+    "name": "SILCOTUB S.A.",
+    "type": "client",
+    "status": "found",
+    "data": {
+      "cui": "15117182",
+      "reg_com": "J31/363/2006",
+      "address": "Bdul. Mihai Viteazu 93",
+      "city": "Zalau",
+      "county": "Salaj"
+    }
+  },
+  {
+    "id": "f24da6b1-fef3-460b-b4b1-34ef725ccf0d",
+    "name": "BRD LEASING",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "14080565",
+      "reg_com": "J40/6764/2001",
+      "address": "Bdul. Ion Mihalache 1-7, Turn BRD, Et. 12",
+      "city": "Sectorul 1",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "128eec65-ee3a-4eed-9b9e-053f76db0958",
+    "name": "LUKOIL",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "10547022",
+      "reg_com": "J40/4469/1998",
+      "address": "Str. Siriului 20, Corp A",
+      "city": "Sectorul 1",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "540e2b57-3785-4cf5-959a-8cfd0dfc0bc6",
+    "name": "SNTGN TRANSGAZ SA",
+    "type": "supplier",
+    "status": "found",
+    "data": {
+      "cui": "13068733",
+      "reg_com": "J32/301/2000",
+      "address": "Piata Constantin I. Motas 1",
+      "city": "Medias",
+      "county": "Sibiu"
+    }
+  },
+  {
+    "id": "25538b1c-381c-4814-a83e-4bf701fa24cc",
+    "name": "REMAT BUCURESTI SUD",
+    "type": "client",
+    "status": "found",
+    "data": {
+      "cui": "482120",
+      "reg_com": "J40/983/1991",
+      "address": "Str. Berceni Fort 5",
+      "city": "Sectorul 4",
+      "county": "Bucuresti"
+    }
+  },
+  {
+    "id": "a0b10fee-287a-4e32-b82c-04d19ca9ffce",
+    "name": "TERRA OIL RECYCLING SRL",
+    "type": "client",
+    "status": "found",
+    "data": {
+      "cui": "36617830",
+      "reg_com": "J27/902/2016",
+      "address": "Str. Constantin Dobrogeanu Gherea 21B",
+      "city": "Roman",
+      "county": "Neamt"
+    }
+  }
+]

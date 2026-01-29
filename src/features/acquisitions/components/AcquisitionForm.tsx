@@ -492,13 +492,21 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
       ...formData,
       environment_fund: Number(formData.environment_fund),
       total_amount: totalAmount,
+      // Explicitly map only DB fields, excluding UI-only weight fields
       items: formData.items.map((item) => ({
-        ...item,
+        id: item.id,
+        material_id: item.material_id,
         quantity: Number(item.quantity),
         impurities_percent: Number(item.impurities_percent),
         final_quantity: Number(item.final_quantity),
         price_per_kg: Number(item.price_per_kg),
         line_total: Number(item.line_total),
+        acquisition_type: item.acquisition_type,
+        // These are UI-only, not saved to DB
+        weight_brut: null,
+        weight_tara: null,
+        weight_brut_time: null,
+        weight_tara_time: null,
       })),
     })
   }
@@ -1013,13 +1021,19 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                       />
                     </td>
                     <td className="px-2 py-2">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={item.final_quantity.toFixed(2)}
-                        readOnly
-                        className="text-right bg-muted/50 w-20"
-                      />
+                      <div className="flex flex-col items-end">
+                        <div className="rounded-md bg-green-100 px-3 py-2 text-right">
+                          <span className="text-lg font-bold text-green-800">
+                            {item.final_quantity.toFixed(2)}
+                          </span>
+                          <span className="ml-1 text-xs text-green-600">kg</span>
+                        </div>
+                        {item.quantity > 0 && item.impurities_percent > 0 && (
+                          <span className="text-xs text-muted-foreground mt-1">
+                            -{item.impurities_percent}% impurități
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-2 py-2">
                       <Input

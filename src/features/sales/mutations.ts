@@ -54,7 +54,15 @@ export function useCreateSale() {
       // Create sale items
       if (items.length > 0) {
         const itemsWithSaleId = items.map((item) => ({
-          ...item,
+          // Only include DB fields, exclude UI-only weight fields
+          material_id: item.material_id,
+          quantity: item.quantity,
+          impurities_percent: item.impurities_percent,
+          final_quantity: item.final_quantity,
+          price_per_ton_usd: item.price_per_ton_usd,
+          exchange_rate: item.exchange_rate,
+          price_per_kg_ron: item.price_per_kg_ron,
+          line_total: item.line_total,
           sale_id: sale.id,
         }))
 
@@ -149,7 +157,15 @@ export function useUpdateSale() {
         // Insert new items
         if (items.length > 0) {
           const itemsWithSaleId = items.map((item) => ({
-            ...item,
+            // Only include DB fields, exclude UI-only weight fields
+            material_id: item.material_id,
+            quantity: item.quantity,
+            impurities_percent: item.impurities_percent,
+            final_quantity: item.final_quantity,
+            price_per_ton_usd: item.price_per_ton_usd,
+            exchange_rate: item.exchange_rate,
+            price_per_kg_ron: item.price_per_kg_ron,
+            line_total: item.line_total,
             sale_id: id,
           }))
 
