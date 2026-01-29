@@ -33,6 +33,13 @@ export interface TicketItem {
   finalQuantity: number
   pricePerKg: number
   lineTotal: number
+  // Weighing times per item
+  weightBrut?: number | null
+  weightTara?: number | null
+  timeBrut?: string | null   // HH:MM:SS format
+  timeTara?: string | null   // HH:MM:SS format
+  dateBrut?: string | null   // YYYY-MM-DD format
+  dateTara?: string | null   // YYYY-MM-DD format
 }
 
 export interface TicketData {

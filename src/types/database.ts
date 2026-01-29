@@ -19,7 +19,7 @@ export type CashRegisterType = 'cash' | 'bank'
 export type CashTransactionType = 'income' | 'expense'
 export type TransactionSourceType = 'manual' | 'acquisition' | 'sale' | 'expense'
 export type MaterialCategory = 'feros' | 'neferos' | 'deee' | 'altele'
-export type AcquisitionType = 'normal' | 'zero' | 'director'
+export type AcquisitionType = 'normal' | 'zero' | 'director' | 'stoc'
 export type VehicleOwnerType = 'own_fleet' | 'transporter' | 'supplier'
 
 export interface Database {

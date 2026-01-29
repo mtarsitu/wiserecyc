@@ -30,6 +30,7 @@ interface CreateSaleInput {
   status?: SaleStatus
   total_amount: number
   created_by?: string
+  cash_register_id?: string | null  // Casa pentru incasare
   items: SaleItemInput[]
 }
 
@@ -91,6 +92,23 @@ export function useCreateSale() {
           // If no inventory exists, we don't create negative inventory
           // This could happen if stock wasn't properly tracked before
         }
+      }
+
+      // Create cash transaction for sale (income) if cash register is selected
+      if (input.cash_register_id && saleData.total_amount > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from('cash_transactions')
+          .insert({
+            company_id: input.company_id,
+            cash_register_id: input.cash_register_id,
+            date: saleData.date,
+            type: 'income',
+            amount: saleData.total_amount,
+            description: `Vânzare - ${saleData.scale_number || 'fără bon'}`,
+            source_type: 'sale',
+            source_id: sale.id,
+          })
       }
 
       return sale

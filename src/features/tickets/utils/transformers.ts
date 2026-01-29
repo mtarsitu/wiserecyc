@@ -100,6 +100,10 @@ function acquisitionItemsToTicketItems(
     line_total: number
     material?: Material
     acquisition_type?: AcquisitionType
+    weight_brut?: number | null
+    weight_tara?: number | null
+    weight_brut_time?: string | null
+    weight_tara_time?: string | null
   }>,
   includeHiddenTypes: boolean = false
 ): TicketItem[] {
@@ -108,14 +112,26 @@ function acquisitionItemsToTicketItems(
     ? items
     : items.filter(item => !item.acquisition_type || item.acquisition_type === 'normal')
 
-  return filteredItems.map(item => ({
-    materialName: item.material?.name || 'Material necunoscut',
-    quantity: item.quantity,
-    impuritiesPercent: item.impurities_percent,
-    finalQuantity: item.final_quantity,
-    pricePerKg: item.price_per_kg,
-    lineTotal: item.line_total
-  }))
+  return filteredItems.map(item => {
+    // Parse ISO timestamps to extract date and time with seconds
+    const brutTime = item.weight_brut_time ? new Date(item.weight_brut_time) : null
+    const taraTime = item.weight_tara_time ? new Date(item.weight_tara_time) : null
+
+    return {
+      materialName: item.material?.name || 'Material necunoscut',
+      quantity: item.quantity,
+      impuritiesPercent: item.impurities_percent,
+      finalQuantity: item.final_quantity,
+      pricePerKg: item.price_per_kg,
+      lineTotal: item.line_total,
+      weightBrut: item.weight_brut,
+      weightTara: item.weight_tara,
+      timeBrut: brutTime ? brutTime.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
+      timeTara: taraTime ? taraTime.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
+      dateBrut: brutTime ? brutTime.toISOString().split('T')[0] : null,
+      dateTara: taraTime ? taraTime.toISOString().split('T')[0] : null,
+    }
+  })
 }
 
 // Transform sale items to ticket items
@@ -128,16 +144,32 @@ function saleItemsToTicketItems(
     price_per_kg_ron: number
     line_total: number
     material?: Material
+    weight_brut?: number | null
+    weight_tara?: number | null
+    weight_brut_time?: string | null
+    weight_tara_time?: string | null
   }>
 ): TicketItem[] {
-  return items.map(item => ({
-    materialName: item.material?.name || 'Material necunoscut',
-    quantity: item.quantity,
-    impuritiesPercent: item.impurities_percent,
-    finalQuantity: item.final_quantity,
-    pricePerKg: item.price_per_kg_ron,
-    lineTotal: item.line_total
-  }))
+  return items.map(item => {
+    // Parse ISO timestamps to extract date and time with seconds
+    const brutTime = item.weight_brut_time ? new Date(item.weight_brut_time) : null
+    const taraTime = item.weight_tara_time ? new Date(item.weight_tara_time) : null
+
+    return {
+      materialName: item.material?.name || 'Material necunoscut',
+      quantity: item.quantity,
+      impuritiesPercent: item.impurities_percent,
+      finalQuantity: item.final_quantity,
+      pricePerKg: item.price_per_kg_ron,
+      lineTotal: item.line_total,
+      weightBrut: item.weight_brut,
+      weightTara: item.weight_tara,
+      timeBrut: brutTime ? brutTime.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
+      timeTara: taraTime ? taraTime.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
+      dateBrut: brutTime ? brutTime.toISOString().split('T')[0] : null,
+      dateTara: taraTime ? taraTime.toISOString().split('T')[0] : null,
+    }
+  })
 }
 
 // Helper to get time with offset (for simulating brut/tara times)

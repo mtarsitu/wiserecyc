@@ -2,9 +2,23 @@ import { forwardRef } from 'react'
 import type { TicketData } from '../types'
 import { formatDate } from '../utils/ticketNumber'
 
+interface EditedItemTime {
+  timeBrut: string
+  timeTara: string
+  dateBrut: string
+  dateTara: string
+}
+
+interface EditedDateTime {
+  date: string
+  timeBrut: string
+  timeTara: string
+  items?: Record<number, EditedItemTime>
+}
+
 interface WeighingTicketProps {
   data: TicketData
-  editedDateTime?: { date: string; timeBrut: string; timeTara: string } | null
+  editedDateTime?: EditedDateTime | null
   copy?: 'original' | 'copy'
 }
 
@@ -145,47 +159,88 @@ export const WeighingTicket = forwardRef<HTMLDivElement, WeighingTicketProps>(
             </div>
           </div>
 
-          {/* Weights Section */}
+          {/* Weights Section - Per Item */}
           <div className="weights-section">
-            {/* Show Tara and Brut only if we have explicit values */}
-            {(data.weightTara !== null && data.weightTara !== undefined && data.weightBrut !== null && data.weightBrut !== undefined) ? (
-              <>
-                <div className="weight-row">
-                  <div className="weight-item">
-                    <span className="weight-label">Tara:</span>
-                    <span className="weight-value">{formatNumber(data.weightTara)}</span>
-                    <span className="weight-unit">KG</span>
-                    <span className="weight-note">[Tara Masurata]</span>
-                  </div>
-                  <div className="weight-timestamp">
-                    <span className="timestamp-label">Cantarit la:</span>
-                    <span className="timestamp-value">{formatDate(displayDate)} {displayTimeTara}</span>
+            {/* Per-item weights if available */}
+            {data.items.map((item, index) => {
+              // Get edited times for this item, or use item's original times
+              const editedItem = editedDateTime?.items?.[index]
+              const itemDateBrut = editedItem?.dateBrut || item.dateBrut || displayDate
+              const itemDateTara = editedItem?.dateTara || item.dateTara || displayDate
+              const itemTimeBrut = editedItem?.timeBrut || item.timeBrut || displayTimeBrut
+              const itemTimeTara = editedItem?.timeTara || item.timeTara || displayTimeTara
+              const itemWeightBrut = item.weightBrut ?? data.weightBrut
+              const itemWeightTara = item.weightTara ?? data.weightTara
+              const itemWeightNet = item.quantity
+
+              // Only show if we have weight values
+              const hasWeights = itemWeightTara !== null && itemWeightTara !== undefined &&
+                                 itemWeightBrut !== null && itemWeightBrut !== undefined
+
+              return (
+                <div key={index} className="material-weights">
+                  {/* Material header if multiple items */}
+                  {data.items.length > 1 && (
+                    <div className="material-header">
+                      <span className="material-name">{item.materialName}</span>
+                    </div>
+                  )}
+
+                  {hasWeights && (
+                    <>
+                      <div className="weight-row">
+                        <div className="weight-item">
+                          <span className="weight-label">Tara:</span>
+                          <span className="weight-value">{formatNumber(itemWeightTara)}</span>
+                          <span className="weight-unit">KG</span>
+                          <span className="weight-note">[Tara Masurata]</span>
+                        </div>
+                        <div className="weight-timestamp">
+                          <span className="timestamp-label">Cantarit la:</span>
+                          <span className="timestamp-value">{formatDate(itemDateTara)} {itemTimeTara}</span>
+                        </div>
+                      </div>
+                      <div className="weight-row">
+                        <div className="weight-item">
+                          <span className="weight-label">Brut:</span>
+                          <span className="weight-value">{formatNumber(itemWeightBrut)}</span>
+                          <span className="weight-unit">KG</span>
+                        </div>
+                        <div className="weight-timestamp">
+                          <span className="timestamp-label">Cantarit la:</span>
+                          <span className="timestamp-value">{formatDate(itemDateBrut)} {itemTimeBrut}</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className={`weight-row ${hasWeights ? 'net-row' : ''}`}>
+                    <div className="weight-item">
+                      <span className="weight-label">Net:</span>
+                      <span className="weight-value net-value">{formatNumber(itemWeightNet)}</span>
+                      <span className="weight-unit">KG</span>
+                    </div>
+                    {index === data.items.length - 1 && (
+                      <div className="weight-timestamp">
+                        <span className="timestamp-label">Clasa de exactitate:</span>
+                        <span className="timestamp-value">{data.company.scaleAccuracyClass || 'III'}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="weight-row">
-                  <div className="weight-item">
-                    <span className="weight-label">Brut:</span>
-                    <span className="weight-value">{formatNumber(data.weightBrut)}</span>
-                    <span className="weight-unit">KG</span>
-                  </div>
-                  <div className="weight-timestamp">
-                    <span className="timestamp-label">Cantarit la:</span>
-                    <span className="timestamp-value">{formatDate(displayDate)} {displayTimeBrut}</span>
-                  </div>
+              )
+            })}
+
+            {/* Total Net if multiple items */}
+            {data.items.length > 1 && (
+              <div className="weight-row total-row">
+                <div className="weight-item">
+                  <span className="weight-label">TOTAL NET:</span>
+                  <span className="weight-value net-value">{formatNumber(data.weightNet)}</span>
+                  <span className="weight-unit">KG</span>
                 </div>
-              </>
-            ) : null}
-            <div className={`weight-row ${(data.weightTara === null || data.weightTara === undefined) ? '' : 'net-row'}`}>
-              <div className="weight-item">
-                <span className="weight-label">Net:</span>
-                <span className="weight-value net-value">{formatNumber(data.weightNet)}</span>
-                <span className="weight-unit">KG</span>
               </div>
-              <div className="weight-timestamp">
-                <span className="timestamp-label">Clasa de exactitate:</span>
-                <span className="timestamp-value">{data.company.scaleAccuracyClass || 'III'}</span>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Documents and Delegate Section */}
@@ -395,8 +450,46 @@ export const WeighingTicket = forwardRef<HTMLDivElement, WeighingTicketProps>(
 
           .net-row {
             background: #e8e8e8;
-            margin: 2mm -3mm -3mm -3mm;
+            margin: 2mm -3mm 0 -3mm;
             padding: 3mm;
+          }
+
+          .material-weights {
+            margin-bottom: 3mm;
+            padding-bottom: 2mm;
+            border-bottom: 1px solid #ddd;
+          }
+
+          .material-weights:last-of-type {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+          }
+
+          .material-header {
+            background: #f0f0f0;
+            padding: 1mm 2mm;
+            margin: 0 -3mm 2mm -3mm;
+            border-bottom: 1px solid #ccc;
+          }
+
+          .material-name {
+            font-weight: bold;
+            font-size: 9pt;
+            text-transform: uppercase;
+          }
+
+          .total-row {
+            background: #333;
+            color: white;
+            margin: 3mm -3mm -3mm -3mm;
+            padding: 3mm;
+          }
+
+          .total-row .weight-label,
+          .total-row .weight-value,
+          .total-row .weight-unit {
+            color: white;
           }
 
           .weight-item {

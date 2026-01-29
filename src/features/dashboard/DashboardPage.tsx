@@ -15,13 +15,16 @@ import {
   ChevronUp,
   Calendar,
   EyeOff,
-  Eye
+  Eye,
+  Wallet,
+  Receipt
 } from 'lucide-react'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { inventoryQueryOptions } from '@/features/inventory/queries'
 import { acquisitionsQueryOptions } from '@/features/acquisitions/queries'
 import { salesQueryOptions } from '@/features/sales/queries'
 import { materialsQueryOptions } from '@/features/materials/queries'
+import { expensesQueryOptions } from '@/features/expenses/queries'
 import type { Material, AcquisitionType } from '@/types/database'
 
 // Material category classification
@@ -177,8 +180,9 @@ export function DashboardPage() {
   const { data: acquisitions = [], isLoading: isLoadingAcquisitions } = useQuery(acquisitionsQueryOptions(companyId))
   const { data: sales = [], isLoading: isLoadingSales } = useQuery(salesQueryOptions(companyId))
   const { data: materials = [], isLoading: isLoadingMaterials } = useQuery(materialsQueryOptions())
+  const { data: expenses = [], isLoading: isLoadingExpenses } = useQuery(expensesQueryOptions(companyId))
 
-  const isLoading = isLoadingInventory || isLoadingAcquisitions || isLoadingSales || isLoadingMaterials
+  const isLoading = isLoadingInventory || isLoadingAcquisitions || isLoadingSales || isLoadingMaterials || isLoadingExpenses
 
   // Material lookup map
   const materialMap = useMemo(() => {
@@ -230,6 +234,47 @@ export function DashboardPage() {
 
     return result
   }, [acquisitions, materialMap, isHiddenItem])
+
+  // Calculate overall average prices for sales
+  const overallSaleAvgPrices = useMemo(() => {
+    const result: Record<MaterialCategoryType, { avgPrice: number; quantity: number; amount: number }> = {
+      feros: { avgPrice: 0, quantity: 0, amount: 0 },
+      neferos: { avgPrice: 0, quantity: 0, amount: 0 },
+      deee: { avgPrice: 0, quantity: 0, amount: 0 },
+      altele: { avgPrice: 0, quantity: 0, amount: 0 },
+    }
+
+    sales.forEach(sale => {
+      sale.items?.forEach(item => {
+        const material = materialMap.get(item.material_id) || item.material
+        if (!material) return
+
+        const category = getMaterialCategory(material)
+        const qty = item.final_quantity || item.quantity || 0
+        const amt = item.line_total || 0
+
+        result[category].quantity += qty
+        result[category].amount += amt
+      })
+    })
+
+    Object.keys(result).forEach(cat => {
+      const c = cat as MaterialCategoryType
+      result[c].avgPrice = result[c].quantity > 0 ? result[c].amount / result[c].quantity : 0
+    })
+
+    return result
+  }, [sales, materialMap])
+
+  // Calculate total expenses (excluding TRANSFER CASE)
+  const totalExpenses = useMemo(() => {
+    const currentMonthStart = getCurrentMonthStart()
+
+    return expenses
+      .filter(e => e.date >= currentMonthStart)
+      .filter(e => !e.name?.toUpperCase().includes('TRANSFER'))
+      .reduce((sum, e) => sum + (e.amount || 0), 0)
+  }, [expenses])
 
   // Calculate period stats
   const calculatePeriodStats = useMemo(() => {
@@ -586,6 +631,58 @@ export function DashboardPage() {
           </div>
         </div>
 
+        {/* Average Sale Prices */}
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+            <Receipt className="h-4 w-4" />
+            Preturi Medii Vanzari (Total)
+          </h3>
+          <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+            {(['feros', 'neferos', 'deee', 'altele'] as MaterialCategoryType[]).map(cat => (
+              <Card key={cat} className="p-3">
+                <div className="flex items-center justify-between">
+                  <Badge className={CATEGORY_COLORS[cat]}>{CATEGORY_LABELS[cat]}</Badge>
+                  <span className="text-sm font-bold text-green-600">
+                    {overallSaleAvgPrices[cat].quantity > 0
+                      ? `${formatNumber(overallSaleAvgPrices[cat].avgPrice)} RON/kg`
+                      : '-'
+                    }
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {formatNumber(overallSaleAvgPrices[cat].quantity)} kg
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Total Expenses Card */}
+        <div className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Cheltuieli luna curenta
+              </CardTitle>
+              <Wallet className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingExpenses ? (
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {formatCurrency(totalExpenses)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Fara transferuri intre case
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Period Stats - Today, Week, Month */}
         <div className="mt-6">
           <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
@@ -616,25 +713,32 @@ export function DashboardPage() {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {recentAcquisitions.map((acquisition) => (
-                    <div
-                      key={acquisition.id}
-                      className="flex items-center justify-between border-b pb-2 last:border-0"
-                    >
-                      <div>
-                        <p className="text-sm font-medium">
-                          {acquisition.supplier?.name || 'Furnizor necunoscut'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(acquisition.date).toLocaleDateString('ro-RO')}
-                          {acquisition.receipt_number && ` - ${acquisition.receipt_number}`}
+                  {recentAcquisitions.map((acquisition) => {
+                    const totalQty = acquisition.items?.reduce((sum, i) => sum + (i.final_quantity || i.quantity || 0), 0) || 0
+                    const avgPrice = totalQty > 0 ? acquisition.total_amount / totalQty : 0
+                    return (
+                      <div
+                        key={acquisition.id}
+                        className="flex items-center justify-between border-b pb-2 last:border-0"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">
+                            {acquisition.supplier?.name || 'Furnizor necunoscut'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(acquisition.date).toLocaleDateString('ro-RO')}
+                            {acquisition.receipt_number && ` - ${acquisition.receipt_number}`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatNumber(totalQty)} kg • {formatNumber(avgPrice)} RON/kg
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold">
+                          {formatCurrency(acquisition.total_amount)}
                         </p>
                       </div>
-                      <p className="text-sm font-semibold">
-                        {formatCurrency(acquisition.total_amount)}
-                      </p>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </CardContent>
@@ -655,25 +759,32 @@ export function DashboardPage() {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {recentSales.map((sale) => (
-                    <div
-                      key={sale.id}
-                      className="flex items-center justify-between border-b pb-2 last:border-0"
-                    >
-                      <div>
-                        <p className="text-sm font-medium">
-                          {sale.client?.name || 'Client necunoscut'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(sale.date).toLocaleDateString('ro-RO')}
-                          {sale.scale_number && ` - ${sale.scale_number}`}
+                  {recentSales.map((sale) => {
+                    const totalQty = sale.items?.reduce((sum, i) => sum + (i.final_quantity || i.quantity || 0), 0) || 0
+                    const avgPrice = totalQty > 0 ? sale.total_amount / totalQty : 0
+                    return (
+                      <div
+                        key={sale.id}
+                        className="flex items-center justify-between border-b pb-2 last:border-0"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">
+                            {sale.client?.name || 'Client necunoscut'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(sale.date).toLocaleDateString('ro-RO')}
+                            {sale.scale_number && ` - ${sale.scale_number}`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatNumber(totalQty)} kg • {formatNumber(avgPrice)} RON/kg
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-green-600">
+                          {formatCurrency(sale.total_amount)}
                         </p>
                       </div>
-                      <p className="text-sm font-semibold text-green-600">
-                        {formatCurrency(sale.total_amount)}
-                      </p>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </CardContent>

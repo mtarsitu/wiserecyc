@@ -704,18 +704,18 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
           </div>
         </div>
 
-        {/* Cash register selector - for recording income */}
-        {formData.status === 'reception_done' && (
+        {/* Cash register selector - for recording income when payment is cash */}
+        {formData.payment_method === 'cash' && (
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="cash_register_id">Casa/Cont pentru incasare</Label>
+              <Label htmlFor="cash_register_id">Casa pentru incasare *</Label>
               <Select
                 id="cash_register_id"
                 name="cash_register_id"
                 value={formData.cash_register_id || ''}
                 onChange={handleChange}
                 options={cashRegisterOptions}
-                placeholder="Selecteaza casa/cont"
+                placeholder="Selecteaza casa"
               />
               <p className="text-xs text-muted-foreground">
                 Selecteaza casa pentru a inregistra automat incasarea in casierie
