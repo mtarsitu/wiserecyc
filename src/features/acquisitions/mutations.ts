@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { acquisitionsKeys } from './queries'
 import { inventoryKeys } from '../inventory/queries'
+import { expensesKeys } from '../expenses/queries'
+import { cashierKeys } from '../cashier/queries'
 import type { LocationType, AcquisitionType } from '@/types/database'
 
 interface AcquisitionItemInput {
@@ -20,6 +22,8 @@ interface CreateAcquisitionInput {
   supplier_id: string | null
   receipt_number?: string
   payment_status: 'paid' | 'unpaid' | 'partial'
+  partial_amount?: number  // Suma plătită pentru plăți parțiale
+  cash_register_id?: string | null  // Casa din care se plătește
   location_type?: LocationType
   contract_id?: string | null
   environment_fund: number
@@ -39,7 +43,7 @@ export function useCreateAcquisition() {
 
   return useMutation({
     mutationFn: async (input: CreateAcquisitionInput) => {
-      const { items, ...acquisitionData } = input
+      const { items, partial_amount, ...acquisitionData } = input
 
       // Create acquisition
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,12 +127,101 @@ export function useCreateAcquisition() {
         }
       }
 
+      // Auto-create expense when payment_status is 'paid' or 'partial'
+      if (input.payment_status !== 'unpaid') {
+        const paymentAmount = input.payment_status === 'paid'
+          ? input.total_amount
+          : (partial_amount || 0)
+
+        if (paymentAmount > 0) {
+          const receiptRef = input.receipt_number || acquisition.id
+
+          // Determine attribution based on location_type and supplier
+          let attributionType: 'contract' | 'punct_lucru' | null = null
+          let attributionId: string | null = null
+
+          if (input.location_type === 'contract' && input.contract_id) {
+            // Attribution to contract
+            attributionType = 'contract'
+            attributionId = input.contract_id
+          } else if (input.supplier_id) {
+            // Check if supplier is punct_lucru
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: supplier } = await (supabase as any)
+              .from('suppliers')
+              .select('is_punct_lucru')
+              .eq('id', input.supplier_id)
+              .single()
+
+            if (supplier?.is_punct_lucru) {
+              attributionType = 'punct_lucru'
+              attributionId = input.supplier_id
+            }
+          }
+
+          // Get payment method from cash register type
+          let paymentMethod: 'cash' | 'bank' | null = null
+          if (input.cash_register_id) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: cashRegister } = await (supabase as any)
+              .from('cash_registers')
+              .select('type')
+              .eq('id', input.cash_register_id)
+              .single()
+
+            if (cashRegister) {
+              paymentMethod = cashRegister.type as 'cash' | 'bank'
+            }
+          }
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any)
+            .from('expenses')
+            .insert({
+              company_id: input.company_id,
+              date: input.date,
+              name: `Plată achiziție ${input.receipt_number || 'fără bon'}`,
+              amount: paymentAmount,
+              type: 'payment',
+              payment_method: paymentMethod,
+              attribution_type: attributionType,
+              attribution_id: attributionId,
+              notes: `Bon: ${receiptRef}`,  // Referință pentru legătură
+              created_by: input.created_by,
+            })
+
+          // Also create cash transaction if cash register is selected
+          if (input.cash_register_id) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase as any)
+              .from('cash_transactions')
+              .insert({
+                company_id: input.company_id,
+                cash_register_id: input.cash_register_id,
+                date: input.date,
+                type: 'expense',  // Money going out
+                amount: paymentAmount,
+                description: `Plată achiziție ${input.receipt_number || 'fără bon'}`,
+                source_type: 'acquisition',
+                source_id: acquisition.id,
+                created_by: input.created_by,
+              })
+          }
+        }
+      }
+
       return acquisition
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: acquisitionsKeys.list(variables.company_id) })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.list(variables.company_id) })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.available(variables.company_id) })
+      // Invalidate expenses and cashier if we created a payment
+      if (variables.payment_status !== 'unpaid') {
+        queryClient.invalidateQueries({ queryKey: expensesKeys.list(variables.company_id) })
+        // Invalidate all cashier queries (registers, transactions, daily summary)
+        queryClient.invalidateQueries({ queryKey: cashierKeys.all })
+      }
     },
   })
 }
@@ -137,7 +230,15 @@ export function useUpdateAcquisition() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, items, ...updates }: { id: string } & Partial<CreateAcquisitionInput>) => {
+    mutationFn: async ({ id, items, partial_amount, ...updates }: { id: string } & Partial<CreateAcquisitionInput>) => {
+      // Get current acquisition to check payment_status change
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: currentAcquisition } = await (supabase as any)
+        .from('acquisitions')
+        .select('payment_status, receipt_number, total_amount')
+        .eq('id', id)
+        .single()
+
       // Update acquisition
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: acquisition, error: acquisitionError } = await (supabase as any)
@@ -181,11 +282,111 @@ export function useUpdateAcquisition() {
         }
       }
 
+      // Auto-create expense when payment_status changes to 'paid' or 'partial'
+      // Only create if status is changing (was unpaid or partial and now paid/partial with new amount)
+      if (updates.payment_status && updates.payment_status !== 'unpaid') {
+        // Check if this is a new payment (status was unpaid, or status is partial with new amount)
+        const wasUnpaid = currentAcquisition?.payment_status === 'unpaid'
+        const isPartialPayment = updates.payment_status === 'partial' && partial_amount && partial_amount > 0
+
+        if (wasUnpaid || isPartialPayment) {
+          const paymentAmount = updates.payment_status === 'paid'
+            ? (updates.total_amount || currentAcquisition?.total_amount || 0)
+            : (partial_amount || 0)
+
+          if (paymentAmount > 0) {
+            const receiptRef = updates.receipt_number || currentAcquisition?.receipt_number || id
+            const today = new Date().toISOString().split('T')[0]
+
+            // Determine attribution based on location_type and supplier
+            let attributionType: 'contract' | 'punct_lucru' | null = null
+            let attributionId: string | null = null
+
+            if (updates.location_type === 'contract' && updates.contract_id) {
+              attributionType = 'contract'
+              attributionId = updates.contract_id
+            } else if (acquisition.location_type === 'contract' && acquisition.contract_id) {
+              attributionType = 'contract'
+              attributionId = acquisition.contract_id
+            } else {
+              // Check if supplier is punct_lucru
+              const supplierId = updates.supplier_id || acquisition.supplier_id
+              if (supplierId) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { data: supplier } = await (supabase as any)
+                  .from('suppliers')
+                  .select('is_punct_lucru')
+                  .eq('id', supplierId)
+                  .single()
+
+                if (supplier?.is_punct_lucru) {
+                  attributionType = 'punct_lucru'
+                  attributionId = supplierId
+                }
+              }
+            }
+
+            // Get payment method from cash register type
+            let paymentMethod: 'cash' | 'bank' | null = null
+            const cashRegisterId = updates.cash_register_id
+            if (cashRegisterId) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const { data: cashRegister } = await (supabase as any)
+                .from('cash_registers')
+                .select('type')
+                .eq('id', cashRegisterId)
+                .single()
+
+              if (cashRegister) {
+                paymentMethod = cashRegister.type as 'cash' | 'bank'
+              }
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase as any)
+              .from('expenses')
+              .insert({
+                company_id: acquisition.company_id,
+                date: today,  // Data editării, nu data achiziției
+                name: `Plată achiziție ${receiptRef}`,
+                amount: paymentAmount,
+                type: 'payment',
+                payment_method: paymentMethod,
+                attribution_type: attributionType,
+                attribution_id: attributionId,
+                notes: `Bon: ${receiptRef}`,
+              })
+
+            // Also create cash transaction if cash register is selected
+            if (cashRegisterId) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              await (supabase as any)
+                .from('cash_transactions')
+                .insert({
+                  company_id: acquisition.company_id,
+                  cash_register_id: cashRegisterId,
+                  date: today,
+                  type: 'expense',
+                  amount: paymentAmount,
+                  description: `Plată achiziție ${receiptRef}`,
+                  source_type: 'acquisition',
+                  source_id: id,
+                })
+            }
+          }
+        }
+      }
+
       return acquisition
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: acquisitionsKeys.list(data.company_id) })
       queryClient.invalidateQueries({ queryKey: acquisitionsKeys.detail(data.id) })
+      // Invalidate expenses and cashier if we may have created one
+      if (variables.payment_status && variables.payment_status !== 'unpaid') {
+        queryClient.invalidateQueries({ queryKey: expensesKeys.list(data.company_id) })
+        queryClient.invalidateQueries({ queryKey: cashierKeys.all })
+      }
     },
   })
 }

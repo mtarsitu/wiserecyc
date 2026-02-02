@@ -42,6 +42,7 @@ interface FormData {
   supplier_id: string
   receipt_number: string
   payment_status: PaymentStatus
+  partial_amount: number  // Suma plătită pentru plăți parțiale
   cash_register_id: string | null
   location_type: LocationType
   contract_id: string | null
@@ -77,6 +78,7 @@ const initialFormData: FormData = {
   supplier_id: '',
   receipt_number: '',
   payment_status: 'unpaid',
+  partial_amount: 0,
   cash_register_id: null,
   location_type: 'curte',
   contract_id: null,
@@ -313,6 +315,7 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
         supplier_id: acquisition.supplier_id || '',
         receipt_number: acquisition.receipt_number || '',
         payment_status: acquisition.payment_status,
+        partial_amount: 0,  // Se va calcula din tranzacțiile existente dacă e nevoie
         cash_register_id: null,
         location_type: acq.location_type || 'curte',
         contract_id: acq.contract_id || null,
@@ -562,16 +565,6 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="payment_status">Status plata *</Label>
-            <Select
-              id="payment_status"
-              name="payment_status"
-              value={formData.payment_status}
-              onChange={handleChange}
-              options={paymentStatusOptions}
-            />
-          </div>
         </div>
 
         {/* Hidden options indicator - shown only with Ctrl+M */}
@@ -792,25 +785,6 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
           </div>
         </div>
 
-        {/* Cash register selector - only show when paid */}
-        {formData.payment_status === 'paid' && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="cash_register_id">Casa/Cont pentru plata</Label>
-              <Select
-                id="cash_register_id"
-                name="cash_register_id"
-                value={formData.cash_register_id || ''}
-                onChange={handleChange}
-                options={cashRegisterOptions}
-                placeholder="Selecteaza casa (optional)"
-              />
-              <p className="text-xs text-muted-foreground">
-                Selecteaza casa pentru a inregistra automat plata in casierie
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Scale indicator bar */}
         <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
@@ -1096,6 +1070,83 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                 </tr>
               </tfoot>
             </table>
+          </div>
+        </div>
+
+        {/* Payment section - AFTER materials so user knows the total */}
+        <div className="space-y-4 rounded-lg border-2 border-primary/30 p-4 bg-primary/5">
+          <div className="flex items-center justify-between">
+            <Label className="text-base font-semibold">Plată</Label>
+            <div className="text-right">
+              <span className="text-sm text-muted-foreground">Total de plată:</span>
+              <span className="ml-2 text-xl font-bold text-primary">{totalAmount.toFixed(2)} RON</span>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2">
+              <Label htmlFor="payment_status">Status plată *</Label>
+              <Select
+                id="payment_status"
+                name="payment_status"
+                value={formData.payment_status}
+                onChange={(e) => {
+                  const value = e.target.value as PaymentStatus
+                  setFormData(prev => ({
+                    ...prev,
+                    payment_status: value,
+                    // Reset partial_amount when not partial
+                    partial_amount: value === 'partial' ? prev.partial_amount : (value === 'paid' ? totalAmount : 0),
+                  }))
+                }}
+                options={paymentStatusOptions}
+              />
+            </div>
+
+            {formData.payment_status !== 'unpaid' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="partial_amount">
+                    {formData.payment_status === 'paid' ? 'Sumă plătită' : 'Sumă plătită acum'} (RON) *
+                  </Label>
+                  <Input
+                    id="partial_amount"
+                    name="partial_amount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={totalAmount}
+                    value={formData.payment_status === 'paid' ? totalAmount : (formData.partial_amount || '')}
+                    onChange={(e) => setFormData(prev => ({ ...prev, partial_amount: Number(e.target.value) || 0 }))}
+                    placeholder="0.00"
+                    disabled={formData.payment_status === 'paid'}
+                    className={formData.payment_status === 'paid' ? 'bg-muted' : ''}
+                  />
+                  {formData.payment_status === 'partial' && (
+                    <p className="text-xs text-muted-foreground">
+                      Rest de plată: {(totalAmount - (formData.partial_amount || 0)).toFixed(2)} RON
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cash_register_id">Casa/Cont *</Label>
+                  <Select
+                    id="cash_register_id"
+                    name="cash_register_id"
+                    value={formData.cash_register_id || ''}
+                    onChange={handleChange}
+                    options={cashRegisterOptions}
+                    placeholder="Selectează casa"
+                  />
+                  {cashRegisters.length === 0 && (
+                    <p className="text-xs text-destructive">
+                      Nu există case. Adaugă una din meniul Casierie.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
 

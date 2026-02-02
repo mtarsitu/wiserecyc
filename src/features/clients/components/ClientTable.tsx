@@ -10,9 +10,11 @@ import {
 } from '@/components/ui'
 import { Pencil, Trash2, Loader2 } from 'lucide-react'
 import type { Client } from '@/types/database'
+import type { ClientBalance } from '../queries'
 
 interface ClientTableProps {
   clients: Client[]
+  balances?: ClientBalance[]  // Optional balance data
   deleteConfirmId: string | null
   isDeleting: boolean
   onEdit: (client: Client) => void
@@ -23,6 +25,7 @@ interface ClientTableProps {
 
 export function ClientTable({
   clients,
+  balances = [],
   deleteConfirmId,
   isDeleting,
   onEdit,
@@ -30,6 +33,9 @@ export function ClientTable({
   onDeleteConfirm,
   onDeleteCancel,
 }: ClientTableProps) {
+  // Create a map for quick balance lookup
+  const balanceMap = new Map(balances.map(b => [b.client_id, b]))
+
   return (
     <Table>
       <TableHeader>
@@ -38,13 +44,17 @@ export function ClientTable({
           <TableHead>CUI</TableHead>
           <TableHead>Localitate</TableHead>
           <TableHead>Telefon</TableHead>
-          <TableHead>Email</TableHead>
+          <TableHead className="text-right">Sold</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="text-right">Actiuni</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {clients.map((client) => (
+        {clients.map((client) => {
+          const balance = balanceMap.get(client.id)
+          const remaining = balance?.remaining || 0
+
+          return (
           <TableRow key={client.id}>
             <TableCell className="font-medium">{client.name}</TableCell>
             <TableCell>{client.cui || '-'}</TableCell>
@@ -52,7 +62,25 @@ export function ClientTable({
               {client.city ? `${client.city}${client.county ? `, ${client.county}` : ''}` : '-'}
             </TableCell>
             <TableCell>{client.phone || '-'}</TableCell>
-            <TableCell>{client.email || '-'}</TableCell>
+            <TableCell className="text-right">
+              {balance ? (
+                <div className="text-sm">
+                  {remaining > 0 ? (
+                    <span className="text-green-600 font-medium" title={`Vândut: ${balance.total_sold.toFixed(2)} RON\nÎncasat: ${balance.total_collected.toFixed(2)} RON`}>
+                      +{remaining.toFixed(2)} RON
+                    </span>
+                  ) : remaining < 0 ? (
+                    <span className="text-red-600 font-medium" title="Încasat în avans">
+                      {remaining.toFixed(2)} RON
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">0</span>
+                  )}
+                </div>
+              ) : (
+                <span className="text-muted-foreground">-</span>
+              )}
+            </TableCell>
             <TableCell>
               <Badge variant={client.is_active ? 'default' : 'secondary'}>
                 {client.is_active ? 'Activ' : 'Inactiv'}
@@ -85,7 +113,8 @@ export function ClientTable({
               </div>
             </TableCell>
           </TableRow>
-        ))}
+          )
+        })}
       </TableBody>
     </Table>
   )

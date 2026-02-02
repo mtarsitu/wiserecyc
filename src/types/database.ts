@@ -570,6 +570,7 @@ export interface Database {
           date: string
           client_id: string | null
           payment_method: PaymentMethod | null
+          payment_status: PaymentStatus
           attribution_type: AttributionType | null
           attribution_id: string | null
           transport_type: TransportType | null
@@ -600,6 +601,7 @@ export interface Database {
           date?: string
           client_id?: string | null
           payment_method?: PaymentMethod | null
+          payment_status?: PaymentStatus
           attribution_type?: AttributionType | null
           attribution_id?: string | null
           transport_type?: TransportType | null
@@ -630,6 +632,7 @@ export interface Database {
           date?: string
           client_id?: string | null
           payment_method?: PaymentMethod | null
+          payment_status?: PaymentStatus
           attribution_type?: AttributionType | null
           attribution_id?: string | null
           transport_type?: TransportType | null

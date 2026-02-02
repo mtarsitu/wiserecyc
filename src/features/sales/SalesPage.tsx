@@ -22,7 +22,7 @@ import {
   type AvizData,
   type Anexa3Data
 } from '@/features/tickets'
-import type { PaymentMethod, TransportType, SaleStatus } from '@/types/database'
+import type { PaymentMethod, TransportType, SaleStatus, PaymentStatus } from '@/types/database'
 
 export function SalesPage() {
   const { companyId, user, profile } = useAuthContext()
@@ -65,6 +65,8 @@ export function SalesPage() {
     date: string
     client_id: string
     payment_method: PaymentMethod | null
+    payment_status: PaymentStatus
+    partial_amount: number
     transport_type: TransportType | null
     transport_price: number
     vehicle_id: string | null
@@ -95,6 +97,9 @@ export function SalesPage() {
           date: data.date,
           client_id: data.client_id || null,
           payment_method: data.payment_method,
+          payment_status: data.payment_status,
+          partial_amount: data.partial_amount,
+          cash_register_id: data.cash_register_id,  // For expense + cash transaction
           transport_type: data.transport_type,
           transport_price: data.transport_price,
           vehicle_id: data.vehicle_id,
@@ -113,6 +118,9 @@ export function SalesPage() {
           date: data.date,
           client_id: data.client_id || null,
           payment_method: data.payment_method,
+          payment_status: data.payment_status,
+          partial_amount: data.partial_amount,
+          cash_register_id: data.cash_register_id,  // For expense + cash transaction
           transport_type: data.transport_type,
           transport_price: data.transport_price,
           vehicle_id: data.vehicle_id,
@@ -126,26 +134,7 @@ export function SalesPage() {
         saleId = newSale.id
       }
 
-      // Create cash transaction if reception_done and cash_register_id is selected
-      // For new sales OR when editing and status changes to 'reception_done' (was not 'reception_done' before)
-      const shouldCreateTransaction = data.status === 'reception_done' &&
-        data.cash_register_id &&
-        saleId &&
-        (!editingSale || editingSale.status !== 'reception_done')
-
-      if (shouldCreateTransaction) {
-        await createCashTransaction.mutateAsync({
-          company_id: companyId!,
-          cash_register_id: data.cash_register_id!,
-          date: data.date,
-          type: 'income',
-          amount: data.total_amount,
-          description: `Vanzare ${data.scale_number || 'fara numar cantar'}`,
-          source_type: 'sale',
-          source_id: saleId,
-          created_by: user?.id,
-        })
-      }
+      // Note: Cash transaction and expense are now auto-created in mutation based on payment_status and cash_register_id
 
       closeDialog('sales')
 

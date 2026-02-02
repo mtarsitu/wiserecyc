@@ -2,7 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { salesKeys } from './queries'
 import { inventoryKeys } from '../inventory/queries'
-import type { PaymentMethod, TransportType, SaleStatus } from '@/types/database'
+import { expensesKeys } from '../expenses/queries'
+import { cashierKeys } from '../cashier/queries'
+import type { PaymentMethod, TransportType, SaleStatus, PaymentStatus } from '@/types/database'
 
 interface SaleItemInput {
   material_id: string
@@ -20,6 +22,8 @@ interface CreateSaleInput {
   date: string
   client_id: string | null
   payment_method?: PaymentMethod | null
+  payment_status?: PaymentStatus  // Status încasare: unpaid, partial, paid
+  partial_amount?: number  // Suma încasată pentru încasări parțiale
   transport_type?: TransportType | null
   transport_price?: number
   transporter_id?: string | null
@@ -39,7 +43,7 @@ export function useCreateSale() {
 
   return useMutation({
     mutationFn: async (input: CreateSaleInput) => {
-      const { items, ...saleData } = input
+      const { items, partial_amount, ...saleData } = input
 
       // Create sale
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,21 +106,63 @@ export function useCreateSale() {
         }
       }
 
-      // Create cash transaction for sale (income) if cash register is selected
-      if (input.cash_register_id && saleData.total_amount > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase as any)
-          .from('cash_transactions')
-          .insert({
-            company_id: input.company_id,
-            cash_register_id: input.cash_register_id,
-            date: saleData.date,
-            type: 'income',
-            amount: saleData.total_amount,
-            description: `Vânzare - ${saleData.scale_number || 'fără bon'}`,
-            source_type: 'sale',
-            source_id: sale.id,
-          })
+      // Auto-create expense (collection) and cash transaction when payment_status is 'paid' or 'partial'
+      if (input.payment_status && input.payment_status !== 'unpaid') {
+        const collectionAmount = input.payment_status === 'paid'
+          ? input.total_amount
+          : (partial_amount || 0)
+
+        if (collectionAmount > 0) {
+          const scaleRef = input.scale_number || sale.id
+
+          // Get payment method from cash register type if cash register is selected
+          let paymentMethod: 'cash' | 'bank' | null = input.payment_method || null
+          if (input.cash_register_id) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: cashRegister } = await (supabase as any)
+              .from('cash_registers')
+              .select('type')
+              .eq('id', input.cash_register_id)
+              .single()
+
+            if (cashRegister) {
+              paymentMethod = cashRegister.type as 'cash' | 'bank'
+            }
+          }
+
+          // Create expense (collection)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any)
+            .from('expenses')
+            .insert({
+              company_id: input.company_id,
+              date: input.date,
+              name: `Încasare vânzare ${input.scale_number || 'fără bon'}`,
+              amount: collectionAmount,
+              type: 'collection',
+              payment_method: paymentMethod,
+              notes: `Cântar: ${scaleRef}`,  // Referință pentru legătură
+              created_by: input.created_by,
+            })
+
+          // Create cash transaction if cash register is selected
+          if (input.cash_register_id) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase as any)
+              .from('cash_transactions')
+              .insert({
+                company_id: input.company_id,
+                cash_register_id: input.cash_register_id,
+                date: input.date,
+                type: 'income',  // Money coming in
+                amount: collectionAmount,
+                description: `Încasare vânzare ${input.scale_number || 'fără bon'}`,
+                source_type: 'sale',
+                source_id: sale.id,
+                created_by: input.created_by,
+              })
+          }
+        }
       }
 
       return sale
@@ -125,6 +171,11 @@ export function useCreateSale() {
       queryClient.invalidateQueries({ queryKey: salesKeys.list(variables.company_id) })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.list(variables.company_id) })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.available(variables.company_id) })
+      // Invalidate expenses and cashier if we created a collection
+      if (variables.payment_status && variables.payment_status !== 'unpaid') {
+        queryClient.invalidateQueries({ queryKey: expensesKeys.list(variables.company_id) })
+        queryClient.invalidateQueries({ queryKey: cashierKeys.all })
+      }
     },
   })
 }
@@ -133,7 +184,15 @@ export function useUpdateSale() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, items, ...updates }: { id: string } & Partial<CreateSaleInput>) => {
+    mutationFn: async ({ id, items, partial_amount, ...updates }: { id: string } & Partial<CreateSaleInput>) => {
+      // Get current sale to check payment_status change
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: currentSale } = await (supabase as any)
+        .from('sales')
+        .select('payment_status, scale_number, total_amount')
+        .eq('id', id)
+        .single()
+
       // Update sale
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: sale, error: saleError } = await (supabase as any)
@@ -178,11 +237,80 @@ export function useUpdateSale() {
         }
       }
 
+      // Auto-create expense (collection) when payment_status changes to 'paid' or 'partial'
+      if (updates.payment_status && updates.payment_status !== 'unpaid') {
+        const wasUnpaid = currentSale?.payment_status === 'unpaid'
+        const isPartialPayment = updates.payment_status === 'partial' && partial_amount && partial_amount > 0
+
+        if (wasUnpaid || isPartialPayment) {
+          const collectionAmount = updates.payment_status === 'paid'
+            ? (updates.total_amount || currentSale?.total_amount || 0)
+            : (partial_amount || 0)
+
+          if (collectionAmount > 0) {
+            const scaleRef = updates.scale_number || currentSale?.scale_number || id
+            const today = new Date().toISOString().split('T')[0]
+
+            // Get payment method from cash register type if cash register is selected
+            let paymentMethod: 'cash' | 'bank' | null = updates.payment_method || null
+            const cashRegisterId = updates.cash_register_id
+            if (cashRegisterId) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const { data: cashRegister } = await (supabase as any)
+                .from('cash_registers')
+                .select('type')
+                .eq('id', cashRegisterId)
+                .single()
+
+              if (cashRegister) {
+                paymentMethod = cashRegister.type as 'cash' | 'bank'
+              }
+            }
+
+            // Create expense (collection)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase as any)
+              .from('expenses')
+              .insert({
+                company_id: sale.company_id,
+                date: today,  // Data editării, nu data vânzării
+                name: `Încasare vânzare ${scaleRef}`,
+                amount: collectionAmount,
+                type: 'collection',
+                payment_method: paymentMethod,
+                notes: `Cântar: ${scaleRef}`,
+              })
+
+            // Create cash transaction if cash register is selected
+            if (cashRegisterId) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              await (supabase as any)
+                .from('cash_transactions')
+                .insert({
+                  company_id: sale.company_id,
+                  cash_register_id: cashRegisterId,
+                  date: today,
+                  type: 'income',
+                  amount: collectionAmount,
+                  description: `Încasare vânzare ${scaleRef}`,
+                  source_type: 'sale',
+                  source_id: id,
+                })
+            }
+          }
+        }
+      }
+
       return sale
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: salesKeys.list(data.company_id) })
       queryClient.invalidateQueries({ queryKey: salesKeys.detail(data.id) })
+      // Invalidate expenses and cashier if we may have created a collection
+      if (variables.payment_status && variables.payment_status !== 'unpaid') {
+        queryClient.invalidateQueries({ queryKey: expensesKeys.list(data.company_id) })
+        queryClient.invalidateQueries({ queryKey: cashierKeys.all })
+      }
     },
   })
 }

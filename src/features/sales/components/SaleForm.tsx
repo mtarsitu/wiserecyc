@@ -19,7 +19,7 @@ import { VehicleForm } from '@/features/vehicles/components/VehicleForm'
 import { DriverForm } from '@/features/drivers/components/DriverForm'
 import { useScale } from '@/contexts/ScaleContext'
 import type { SaleWithDetails } from '../queries'
-import type { PaymentMethod, TransportType, SaleStatus, InsertTables } from '@/types/database'
+import type { PaymentMethod, TransportType, SaleStatus, PaymentStatus, InsertTables } from '@/types/database'
 
 interface SaleItemInput {
   id?: string
@@ -42,6 +42,8 @@ interface FormData {
   date: string
   client_id: string
   payment_method: PaymentMethod | null
+  payment_status: PaymentStatus  // Status încasare: unpaid, partial, paid
+  partial_amount: number  // Suma încasată pentru încasări parțiale
   transport_type: TransportType | null
   transport_price: number
   transporter_id: string | null
@@ -74,6 +76,8 @@ const initialFormData: FormData = {
   date: new Date().toISOString().split('T')[0],
   client_id: '',
   payment_method: 'bank',
+  payment_status: 'unpaid',
+  partial_amount: 0,
   transport_type: 'intern',
   transport_price: 0,
   transporter_id: null,
@@ -230,10 +234,14 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
 
   useEffect(() => {
     if (sale) {
+      // Get payment_status from sale - cast to access the new field
+      const saleWithPaymentStatus = sale as SaleWithDetails & { payment_status?: PaymentStatus }
       setFormData({
         date: sale.date.split('T')[0],
         client_id: sale.client_id || '',
         payment_method: sale.payment_method,
+        payment_status: saleWithPaymentStatus.payment_status || 'unpaid',
+        partial_amount: 0,  // Se va calcula din tranzacțiile existente dacă e nevoie
         transport_type: sale.transport_type,
         transport_price: sale.transport_price,
         transporter_id: sale.transporter_id || null,
@@ -711,25 +719,6 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
           </div>
         </div>
 
-        {/* Cash register selector - for recording income when payment is cash */}
-        {formData.payment_method === 'cash' && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="cash_register_id">Casa pentru incasare *</Label>
-              <Select
-                id="cash_register_id"
-                name="cash_register_id"
-                value={formData.cash_register_id || ''}
-                onChange={handleChange}
-                options={cashRegisterOptions}
-                placeholder="Selecteaza casa"
-              />
-              <p className="text-xs text-muted-foreground">
-                Selecteaza casa pentru a inregistra automat incasarea in casierie
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Scale indicator bar */}
         <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
@@ -1006,6 +995,86 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
                 </tr>
               </tfoot>
             </table>
+          </div>
+        </div>
+
+        {/* Payment/Collection section - AFTER materials so user knows the total */}
+        <div className="space-y-4 rounded-lg border-2 border-green-500/30 p-4 bg-green-50/50 dark:bg-green-950/20">
+          <div className="flex items-center justify-between">
+            <Label className="text-base font-semibold">Încasare</Label>
+            <div className="text-right">
+              <span className="text-sm text-muted-foreground">Total de încasat:</span>
+              <span className="ml-2 text-xl font-bold text-green-600">{totalAmount.toFixed(2)} RON</span>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2">
+              <Label htmlFor="payment_status">Status încasare *</Label>
+              <Select
+                id="payment_status"
+                name="payment_status"
+                value={formData.payment_status}
+                onChange={(e) => {
+                  const value = e.target.value as PaymentStatus
+                  setFormData(prev => ({
+                    ...prev,
+                    payment_status: value,
+                    partial_amount: value === 'partial' ? prev.partial_amount : (value === 'paid' ? totalAmount : 0),
+                  }))
+                }}
+                options={[
+                  { value: 'unpaid', label: 'Neîncasat' },
+                  { value: 'partial', label: 'Partial' },
+                  { value: 'paid', label: 'Încasat' },
+                ]}
+              />
+            </div>
+
+            {formData.payment_status !== 'unpaid' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="partial_amount">
+                    {formData.payment_status === 'paid' ? 'Sumă încasată' : 'Sumă încasată acum'} (RON) *
+                  </Label>
+                  <Input
+                    id="partial_amount"
+                    name="partial_amount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={totalAmount}
+                    value={formData.payment_status === 'paid' ? totalAmount : (formData.partial_amount || '')}
+                    onChange={(e) => setFormData(prev => ({ ...prev, partial_amount: Number(e.target.value) || 0 }))}
+                    placeholder="0.00"
+                    disabled={formData.payment_status === 'paid'}
+                    className={formData.payment_status === 'paid' ? 'bg-muted' : ''}
+                  />
+                  {formData.payment_status === 'partial' && (
+                    <p className="text-xs text-muted-foreground">
+                      Rest de încasat: {(totalAmount - (formData.partial_amount || 0)).toFixed(2)} RON
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cash_register_id">Casa/Cont *</Label>
+                  <Select
+                    id="cash_register_id"
+                    name="cash_register_id"
+                    value={formData.cash_register_id || ''}
+                    onChange={handleChange}
+                    options={cashRegisterOptions}
+                    placeholder="Selectează casa"
+                  />
+                  {cashRegisters.length === 0 && (
+                    <p className="text-xs text-destructive">
+                      Nu există case. Adaugă una din meniul Casierie.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
 

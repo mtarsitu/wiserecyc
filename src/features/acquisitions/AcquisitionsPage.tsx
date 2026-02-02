@@ -106,6 +106,7 @@ export function AcquisitionsPage() {
     supplier_id: string
     receipt_number: string
     payment_status: 'paid' | 'unpaid' | 'partial'
+    partial_amount: number
     cash_register_id: string | null
     location_type: 'curte' | 'contract' | 'deee'
     contract_id: string | null
@@ -137,6 +138,8 @@ export function AcquisitionsPage() {
           supplier_id: data.supplier_id || null,
           receipt_number: data.receipt_number,
           payment_status: data.payment_status,
+          partial_amount: data.partial_amount,
+          cash_register_id: data.cash_register_id,  // For expense + cash transaction
           location_type: data.location_type,
           contract_id: data.contract_id,
           environment_fund: data.environment_fund,
@@ -158,6 +161,8 @@ export function AcquisitionsPage() {
           supplier_id: data.supplier_id || null,
           receipt_number: data.receipt_number,
           payment_status: data.payment_status,
+          partial_amount: data.partial_amount,
+          cash_register_id: data.cash_register_id,  // Pass through for expense + cash transaction creation
           location_type: data.location_type,
           contract_id: data.contract_id,
           environment_fund: data.environment_fund,
@@ -173,26 +178,7 @@ export function AcquisitionsPage() {
         acquisitionId = newAcquisition.id
       }
 
-      // Create cash transaction if paid and cash_register_id is selected
-      // For new acquisitions OR when editing and status changes to 'paid' (was not 'paid' before)
-      const shouldCreateTransaction = data.payment_status === 'paid' &&
-        data.cash_register_id &&
-        acquisitionId &&
-        (!editingAcquisition || editingAcquisition.payment_status !== 'paid')
-
-      if (shouldCreateTransaction) {
-        await createCashTransaction.mutateAsync({
-          company_id: companyId!,
-          cash_register_id: data.cash_register_id!,
-          date: data.date,
-          type: 'expense',
-          amount: data.total_amount,
-          description: `Achizitie ${data.receipt_number || 'fara numar'}`,
-          source_type: 'acquisition',
-          source_id: acquisitionId,
-          created_by: user?.id,
-        })
-      }
+      // Note: Cash transaction and expense are now auto-created in mutation based on payment_status and cash_register_id
 
       closeDialog('acquisitions')
 

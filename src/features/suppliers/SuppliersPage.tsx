@@ -5,7 +5,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Input, Dialog } from 
 import { Plus, Search, Loader2 } from 'lucide-react'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { useUIStore } from '@/stores/ui'
-import { suppliersQueryOptions } from './queries'
+import { suppliersQueryOptions, supplierBalancesQueryOptions } from './queries'
 import { useCreateSupplier, useUpdateSupplier, useDeleteSupplier } from './mutations'
 import { SupplierTable } from './components/SupplierTable'
 import { SupplierForm } from './components/SupplierForm'
@@ -27,6 +27,7 @@ export function SuppliersPage() {
 
   // Queries & Mutations
   const { data: suppliers = [], isLoading } = useQuery(suppliersQueryOptions(companyId))
+  const { data: balances = [] } = useQuery(supplierBalancesQueryOptions(companyId))
   const createSupplier = useCreateSupplier()
   const updateSupplier = useUpdateSupplier()
   const deleteSupplier = useDeleteSupplier()
@@ -112,6 +113,7 @@ export function SuppliersPage() {
             ) : (
               <SupplierTable
                 suppliers={filteredSuppliers}
+                balances={balances}
                 deleteConfirmId={deleteConfirmId}
                 isDeleting={deleteSupplier.isPending}
                 onEdit={handleEdit}

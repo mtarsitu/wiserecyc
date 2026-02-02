@@ -10,9 +10,11 @@ import {
 } from '@/components/ui'
 import { Pencil, Trash2, Loader2 } from 'lucide-react'
 import type { Supplier } from '@/types/database'
+import type { SupplierBalance } from '../queries'
 
 interface SupplierTableProps {
   suppliers: Supplier[]
+  balances?: SupplierBalance[]  // Optional balance data
   deleteConfirmId: string | null
   isDeleting: boolean
   onEdit: (supplier: Supplier) => void
@@ -37,6 +39,7 @@ function SupplierTypeBadges({ supplier }: { supplier: Supplier }) {
 
 export function SupplierTable({
   suppliers,
+  balances = [],
   deleteConfirmId,
   isDeleting,
   onEdit,
@@ -44,6 +47,9 @@ export function SupplierTable({
   onDeleteConfirm,
   onDeleteCancel,
 }: SupplierTableProps) {
+  // Create a map for quick balance lookup
+  const balanceMap = new Map(balances.map(b => [b.supplier_id, b]))
+
   return (
     <Table>
       <TableHeader>
@@ -53,12 +59,17 @@ export function SupplierTable({
           <TableHead>Localitate</TableHead>
           <TableHead>Telefon</TableHead>
           <TableHead>Tip</TableHead>
+          <TableHead className="text-right">Sold</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="text-right">Actiuni</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {suppliers.map((supplier) => (
+        {suppliers.map((supplier) => {
+          const balance = balanceMap.get(supplier.id)
+          const remaining = balance?.remaining || 0
+
+          return (
           <TableRow key={supplier.id}>
             <TableCell className="font-medium">{supplier.name}</TableCell>
             <TableCell>{supplier.cui || '-'}</TableCell>
@@ -69,6 +80,25 @@ export function SupplierTable({
             </TableCell>
             <TableCell>{supplier.phone || '-'}</TableCell>
             <TableCell><SupplierTypeBadges supplier={supplier} /></TableCell>
+            <TableCell className="text-right">
+              {balance ? (
+                <div className="text-sm">
+                  {remaining > 0 ? (
+                    <span className="text-red-600 font-medium" title={`Achiziționat: ${balance.total_purchased.toFixed(2)} RON\nAchitat: ${balance.total_paid.toFixed(2)} RON`}>
+                      -{remaining.toFixed(2)} RON
+                    </span>
+                  ) : remaining < 0 ? (
+                    <span className="text-green-600 font-medium" title="Plătit în avans">
+                      +{Math.abs(remaining).toFixed(2)} RON
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">0</span>
+                  )}
+                </div>
+              ) : (
+                <span className="text-muted-foreground">-</span>
+              )}
+            </TableCell>
             <TableCell>
               <Badge variant={supplier.is_active ? 'default' : 'secondary'}>
                 {supplier.is_active ? 'Activ' : 'Inactiv'}
@@ -101,7 +131,8 @@ export function SupplierTable({
               </div>
             </TableCell>
           </TableRow>
-        ))}
+          )
+        })}
       </TableBody>
     </Table>
   )

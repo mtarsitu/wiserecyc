@@ -5,7 +5,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Input, Dialog } from 
 import { Plus, Search, Loader2 } from 'lucide-react'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { useUIStore } from '@/stores/ui'
-import { clientsQueryOptions } from './queries'
+import { clientsQueryOptions, clientBalancesQueryOptions } from './queries'
 import { useCreateClient, useUpdateClient, useDeleteClient } from './mutations'
 import { ClientTable } from './components/ClientTable'
 import { ClientForm } from './components/ClientForm'
@@ -27,6 +27,7 @@ export function ClientsPage() {
 
   // Queries & Mutations
   const { data: clients = [], isLoading } = useQuery(clientsQueryOptions(companyId))
+  const { data: balances = [] } = useQuery(clientBalancesQueryOptions(companyId))
   const createClient = useCreateClient()
   const updateClient = useUpdateClient()
   const deleteClient = useDeleteClient()
@@ -112,6 +113,7 @@ export function ClientsPage() {
             ) : (
               <ClientTable
                 clients={filteredClients}
+                balances={balances}
                 deleteConfirmId={deleteConfirmId}
                 isDeleting={deleteClient.isPending}
                 onEdit={handleEdit}
