@@ -1,4 +1,3 @@
-npm warn exec The following package was not found and will be installed: supabase@2.75.0
 export type Json =
   | string
   | number
@@ -1691,36 +1690,35 @@ export const Constants = {
 // Custom Type Aliases & Helpers
 // =====================================================
 
-// Helper types
-type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
+// Helper types for Insert and Update
 export type InsertTables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert']
 export type UpdateTables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update']
 
-// Base entity types
-export type Company = Tables<'companies'>
-export type Profile = Tables<'profiles'>
-export type Material = Tables<'materials'>
-export type Supplier = Tables<'suppliers'>
-export type Client = Tables<'clients'>
-export type Contract = Tables<'contracts'>
-export type Transporter = Tables<'transporters'>
-export type Inventory = Tables<'inventory'>
-export type ExpenseCategory = Tables<'expense_categories'>
-export type Acquisition = Tables<'acquisitions'>
-export type AcquisitionItem = Tables<'acquisition_items'>
-export type Sale = Tables<'sales'>
-export type SaleItem = Tables<'sale_items'>
-export type Reception = Tables<'receptions'>
-export type ReceptionItem = Tables<'reception_items'>
-export type Expense = Tables<'expenses'>
-export type Dismantling = Tables<'dismantlings'>
-export type DismantlingOutput = Tables<'dismantling_outputs'>
-export type CashRegister = Tables<'cash_registers'>
-export type CashTransaction = Tables<'cash_transactions'>
-export type Employee = Tables<'employees'>
-export type Vehicle = Tables<'vehicles'>
-export type Driver = Tables<'drivers'>
-export type VehicleDriver = Tables<'vehicle_drivers'>
+// Base entity types (using Database directly to avoid conflict with Tables helper)
+export type Company = Database['public']['Tables']['companies']['Row']
+export type Profile = Database['public']['Tables']['profiles']['Row']
+export type Material = Database['public']['Tables']['materials']['Row']
+export type Supplier = Database['public']['Tables']['suppliers']['Row']
+export type Client = Database['public']['Tables']['clients']['Row']
+export type Contract = Database['public']['Tables']['contracts']['Row']
+export type Transporter = Database['public']['Tables']['transporters']['Row']
+export type Inventory = Database['public']['Tables']['inventory']['Row']
+export type ExpenseCategory = Database['public']['Tables']['expense_categories']['Row']
+export type Acquisition = Database['public']['Tables']['acquisitions']['Row']
+export type AcquisitionItem = Database['public']['Tables']['acquisition_items']['Row']
+export type Sale = Database['public']['Tables']['sales']['Row']
+export type SaleItem = Database['public']['Tables']['sale_items']['Row']
+export type Reception = Database['public']['Tables']['receptions']['Row']
+export type ReceptionItem = Database['public']['Tables']['reception_items']['Row']
+export type Expense = Database['public']['Tables']['expenses']['Row']
+export type Dismantling = Database['public']['Tables']['dismantlings']['Row']
+export type DismantlingOutput = Database['public']['Tables']['dismantling_outputs']['Row']
+export type CashRegister = Database['public']['Tables']['cash_registers']['Row']
+export type CashTransaction = Database['public']['Tables']['cash_transactions']['Row']
+export type Employee = Database['public']['Tables']['employees']['Row']
+export type Vehicle = Database['public']['Tables']['vehicles']['Row']
+export type Driver = Database['public']['Tables']['drivers']['Row']
+export type VehicleDriver = Database['public']['Tables']['vehicle_drivers']['Row']
 
 // Extended types with relations
 export interface AcquisitionWithItems extends Acquisition {
@@ -1771,3 +1769,6 @@ export type VehicleOwnerType = 'own_fleet' | 'transporter' | 'supplier'
 export type CashRegisterType = 'cash' | 'bank'
 export type CashTransactionType = 'income' | 'expense'
 export type TransactionSourceType = 'manual' | 'acquisition' | 'sale' | 'expense'
+export type UserRole = 'super_admin' | 'admin' | 'operator' | 'viewer'
+export type ExpenseType = 'payment' | 'collection'
+export type AttributionType = 'curte' | 'contract'
