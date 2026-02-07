@@ -11,6 +11,7 @@ import { useCreateAcquisition, useUpdateAcquisition, useDeleteAcquisition } from
 import { useCreateCashTransaction } from '@/features/cashier/mutations'
 import { AcquisitionForm } from './components/AcquisitionForm'
 import { AcquisitionTable } from './components/AcquisitionTable'
+import { BorderouPrintDialog } from './components/BorderouPrintDialog'
 import { TicketPrintDialog, usePrintTicket, acquisitionToTicketData } from '@/features/tickets'
 
 // Parola pentru a afisa achizitiile ascunse (pret 0 sau donatii)
@@ -35,6 +36,10 @@ export function AcquisitionsPage() {
   // Ticket Print Hook
   const { isOpen: isTicketOpen, ticketData, openTicketDialog, closeTicketDialog } = usePrintTicket()
 
+  // Borderou Print State
+  const [borderouDialogOpen, setBorderouDialogOpen] = useState(false)
+  const [borderouAcquisition, setBorderouAcquisition] = useState<AcquisitionWithDetails | null>(null)
+
   // Query
   const { data: allAcquisitions = [], isLoading } = useQuery(acquisitionsQueryOptions(companyId))
 
@@ -55,9 +60,9 @@ export function AcquisitionsPage() {
   // Numara achizitiile ascunse
   const hiddenCount = allAcquisitions.length - acquisitions.length
 
-  // Handler pentru Ctrl+M / Cmd+M
+  // Handler pentru Ctrl+Shift+H / Cmd+Shift+H
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'm') {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'h' || e.key === 'H')) {
       e.preventDefault()
       if (showHiddenAcquisitions) {
         // Daca sunt deja vizibile, le ascundem direct
@@ -111,9 +116,12 @@ export function AcquisitionsPage() {
     location_type: 'curte' | 'contract' | 'deee'
     contract_id: string | null
     environment_fund: number
-    total_amount: number
+    tax_amount: number  // Impozit 10% de plătit la stat (pentru persoane fizice)
+    is_natural_person: boolean  // Dacă furnizorul este persoană fizică
+    total_amount: number  // Suma plătită furnizorului
     info: string
     notes: string
+    goes_to_accounting: boolean
     vehicle_id: string | null
     driver_id: string | null
     transport_type: string
@@ -143,9 +151,12 @@ export function AcquisitionsPage() {
           location_type: data.location_type,
           contract_id: data.contract_id,
           environment_fund: data.environment_fund,
+          tax_amount: data.tax_amount,
+          is_natural_person: data.is_natural_person,
           total_amount: data.total_amount,
           info: data.info,
           notes: data.notes,
+          goes_to_accounting: data.goes_to_accounting,
           vehicle_id: data.vehicle_id,
           driver_id: data.driver_id,
           transport_type: data.transport_type,
@@ -166,9 +177,12 @@ export function AcquisitionsPage() {
           location_type: data.location_type,
           contract_id: data.contract_id,
           environment_fund: data.environment_fund,
+          tax_amount: data.tax_amount,
+          is_natural_person: data.is_natural_person,
           total_amount: data.total_amount,
           info: data.info,
           notes: data.notes,
+          goes_to_accounting: data.goes_to_accounting,
           vehicle_id: data.vehicle_id,
           driver_id: data.driver_id,
           transport_type: data.transport_type,
@@ -225,6 +239,11 @@ export function AcquisitionsPage() {
     }
   }
 
+  const handlePrintBorderou = (acquisition: AcquisitionWithDetails) => {
+    setBorderouAcquisition(acquisition)
+    setBorderouDialogOpen(true)
+  }
+
   const handleDelete = async (id: string) => {
     try {
       await deleteAcquisition.mutateAsync({ id, companyId: companyId! })
@@ -278,8 +297,10 @@ export function AcquisitionsPage() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onPrintTicket={handlePrintTicket}
+              onPrintBorderou={handlePrintBorderou}
               deleteLoading={deleteAcquisition.isPending}
               showHiddenItems={showHiddenAcquisitions}
+              companyId={companyId ?? null}
             />
           </CardContent>
         </Card>
@@ -308,6 +329,17 @@ export function AcquisitionsPage() {
         isOpen={isTicketOpen}
         onClose={closeTicketDialog}
         ticketData={ticketData}
+      />
+
+      {/* Borderou Print Dialog */}
+      <BorderouPrintDialog
+        isOpen={borderouDialogOpen}
+        onClose={() => {
+          setBorderouDialogOpen(false)
+          setBorderouAcquisition(null)
+        }}
+        acquisition={borderouAcquisition}
+        company={company ?? null}
       />
 
       {/* Password Dialog for Hidden Acquisitions */}

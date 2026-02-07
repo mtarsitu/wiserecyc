@@ -258,6 +258,7 @@ export function SalesPage() {
               onPrintAviz={handlePrintAviz}
               onPrintAnexa3={handlePrintAnexa3}
               deleteLoading={deleteSale.isPending}
+              companyId={companyId ?? null}
             />
           </CardContent>
         </Card>

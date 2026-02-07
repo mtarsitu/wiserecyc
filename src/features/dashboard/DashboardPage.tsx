@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Header } from '@/components/layout'
-import { Card, CardContent, CardHeader, CardTitle, Badge, Dialog, Button } from '@/components/ui'
+import { Card, CardContent, CardHeader, CardTitle, Badge, Dialog, Button, Label } from '@/components/ui'
 import {
   ShoppingCart,
   TrendingUp,
@@ -152,6 +152,68 @@ function getPreviousMonthDates(): { start: string; end: string } {
   }
 }
 
+// Period filter options
+type PeriodFilter = 'current_year' | 'last_year' | 'current_month' | 'custom_month'
+
+interface PeriodOption {
+  value: PeriodFilter | string  // string for custom months like '2026-01', '2026-02'
+  label: string
+}
+
+function getPeriodFilterRange(filter: string): { start: string; end: string } {
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth()
+
+  if (filter === 'current_year') {
+    return {
+      start: `${currentYear}-01-01`,
+      end: `${currentYear}-12-31`,
+    }
+  }
+  if (filter === 'last_year') {
+    return {
+      start: `${currentYear - 1}-01-01`,
+      end: `${currentYear - 1}-12-31`,
+    }
+  }
+  if (filter === 'current_month') {
+    const monthStr = String(currentMonth + 1).padStart(2, '0')
+    const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate()
+    return {
+      start: `${currentYear}-${monthStr}-01`,
+      end: `${currentYear}-${monthStr}-${lastDay}`,
+    }
+  }
+  // Custom month format: 'YYYY-MM'
+  if (filter.match(/^\d{4}-\d{2}$/)) {
+    const [year, month] = filter.split('-').map(Number)
+    const lastDay = new Date(year, month, 0).getDate()
+    return {
+      start: `${filter}-01`,
+      end: `${filter}-${String(lastDay).padStart(2, '0')}`,
+    }
+  }
+  // Default to current month
+  const monthStr = String(currentMonth + 1).padStart(2, '0')
+  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate()
+  return {
+    start: `${currentYear}-${monthStr}-01`,
+    end: `${currentYear}-${monthStr}-${lastDay}`,
+  }
+}
+
+function getMonthsForYear(year: number): PeriodOption[] {
+  const months = [
+    'Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie',
+    'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'
+  ]
+  return months.map((name, idx) => ({
+    value: `${year}-${String(idx + 1).padStart(2, '0')}`,
+    label: `${name} ${year}`,
+  }))
+}
+
 export function DashboardPage() {
   const { companyId, profile } = useAuthContext()
   const [expandedPeriod, setExpandedPeriod] = useState<string | null>(null)
@@ -162,14 +224,35 @@ export function DashboardPage() {
     type: 'acquisition' | 'sale'
   }>({ open: false, data: null, title: '', type: 'acquisition' })
 
-  // Hidden data toggle (Ctrl+M) - only for admin users
+  // Period filter state
+  const [periodFilter, setPeriodFilter] = useState<string>('current_month')
+  const periodRange = useMemo(() => getPeriodFilterRange(periodFilter), [periodFilter])
+
+  // Generate period options
+  const periodOptions = useMemo(() => {
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const options: PeriodOption[] = [
+      { value: 'current_month', label: 'Luna curentă' },
+      { value: 'current_year', label: `Anul ${currentYear}` },
+      { value: 'last_year', label: `Anul ${currentYear - 1}` },
+    ]
+    // Add months for current year
+    const currentYearMonths = getMonthsForYear(currentYear)
+    // Add months for last year
+    const lastYearMonths = getMonthsForYear(currentYear - 1)
+
+    return [...options, ...currentYearMonths, ...lastYearMonths]
+  }, [])
+
+  // Hidden data toggle (Ctrl+Shift+H) - only for admin users
   const [showHiddenData, setShowHiddenData] = useState(false)
   const [hideNotifications, setHideNotifications] = useState(false)
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin'
 
-  // Keyboard shortcut handler for Ctrl+M / Cmd+M to toggle hidden data view
+  // Keyboard shortcut handler for Ctrl+Shift+H / Cmd+Shift+H to toggle hidden data view
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'h' || e.key === 'H')) {
       e.preventDefault()
       if (isAdmin) {
         setShowHiddenData(prev => !prev)
@@ -194,6 +277,19 @@ export function DashboardPage() {
 
   const isLoading = isLoadingInventory || isLoadingAcquisitions || isLoadingSales || isLoadingMaterials || isLoadingExpenses
 
+  // Filter data by selected period
+  const filteredAcquisitions = useMemo(() => {
+    return acquisitions.filter(a => a.date >= periodRange.start && a.date <= periodRange.end)
+  }, [acquisitions, periodRange])
+
+  const filteredSales = useMemo(() => {
+    return sales.filter(s => s.date >= periodRange.start && s.date <= periodRange.end)
+  }, [sales, periodRange])
+
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(e => e.date >= periodRange.start && e.date <= periodRange.end)
+  }, [expenses, periodRange])
+
   // Material lookup map
   const materialMap = useMemo(() => {
     const map = new Map<string, Material>()
@@ -215,7 +311,7 @@ export function DashboardPage() {
       altele: { avgPrice: 0, quantity: 0, amount: 0, hiddenQuantity: 0, hiddenAmount: 0 },
     }
 
-    acquisitions.forEach(acq => {
+    filteredAcquisitions.forEach(acq => {
       acq.items?.forEach(item => {
         const material = materialMap.get(item.material_id) || item.material
         if (!material) return
@@ -243,7 +339,7 @@ export function DashboardPage() {
     })
 
     return result
-  }, [acquisitions, materialMap, isHiddenItem])
+  }, [filteredAcquisitions, materialMap, isHiddenItem])
 
   // Calculate per-material acquisition prices by category
   const acqMaterialsByCategory = useMemo(() => {
@@ -256,7 +352,7 @@ export function DashboardPage() {
 
     const materialTotals = new Map<string, { materialId: string; materialName: string; category: MaterialCategoryType; quantity: number; amount: number }>()
 
-    acquisitions.forEach(acq => {
+    filteredAcquisitions.forEach(acq => {
       acq.items?.forEach(item => {
         const material = materialMap.get(item.material_id) || item.material
         if (!material) return
@@ -298,7 +394,7 @@ export function DashboardPage() {
     })
 
     return result
-  }, [acquisitions, materialMap])
+  }, [filteredAcquisitions, materialMap])
 
   // Calculate per-material sale prices by category
   const saleMaterialsByCategory = useMemo(() => {
@@ -311,7 +407,7 @@ export function DashboardPage() {
 
     const materialTotals = new Map<string, { materialId: string; materialName: string; category: MaterialCategoryType; quantity: number; amount: number }>()
 
-    sales.forEach(sale => {
+    filteredSales.forEach(sale => {
       sale.items?.forEach(item => {
         const material = materialMap.get(item.material_id) || item.material
         if (!material) return
@@ -353,7 +449,7 @@ export function DashboardPage() {
     })
 
     return result
-  }, [sales, materialMap])
+  }, [filteredSales, materialMap])
 
   // Calculate overall average prices for sales
   const overallSaleAvgPrices = useMemo(() => {
@@ -364,7 +460,7 @@ export function DashboardPage() {
       altele: { avgPrice: 0, quantity: 0, amount: 0 },
     }
 
-    sales.forEach(sale => {
+    filteredSales.forEach(sale => {
       sale.items?.forEach(item => {
         const material = materialMap.get(item.material_id) || item.material
         if (!material) return
@@ -384,17 +480,14 @@ export function DashboardPage() {
     })
 
     return result
-  }, [sales, materialMap])
+  }, [filteredSales, materialMap])
 
-  // Calculate total expenses (excluding TRANSFER CASE)
+  // Calculate total expenses (excluding TRANSFER CASE) - uses filtered period
   const totalExpenses = useMemo(() => {
-    const currentMonthStart = getCurrentMonthStart()
-
-    return expenses
-      .filter(e => e.date >= currentMonthStart)
+    return filteredExpenses
       .filter(e => !e.name?.toUpperCase().includes('TRANSFER'))
       .reduce((sum, e) => sum + (e.amount || 0), 0)
-  }, [expenses])
+  }, [filteredExpenses])
 
   // Calculate period stats
   const calculatePeriodStats = useMemo(() => {
@@ -515,54 +608,39 @@ export function DashboardPage() {
   const weekStats = useMemo(() => calculatePeriodStats('week'), [calculatePeriodStats])
   const monthStats = useMemo(() => calculatePeriodStats('month'), [calculatePeriodStats])
 
-  // Calculate main stats (existing logic)
+  // Calculate main stats using filtered data
   const stats = useMemo(() => {
-    const currentMonthStart = getCurrentMonthStart()
-    const { start: prevMonthStart, end: prevMonthEnd } = getPreviousMonthDates()
+    // Get period label for display
+    const getPeriodLabel = () => {
+      const opt = periodOptions.find(o => o.value === periodFilter)
+      return opt?.label || 'Perioadă selectată'
+    }
 
-    const currentMonthAcquisitions = acquisitions.filter(a => a.date >= currentMonthStart)
-    const prevMonthAcquisitions = acquisitions.filter(a => a.date >= prevMonthStart && a.date <= prevMonthEnd)
-
-    const currentMonthSales = sales.filter(s => s.date >= currentMonthStart)
-    const prevMonthSales = sales.filter(s => s.date >= prevMonthStart && s.date <= prevMonthEnd)
-
-    const currentAcquisitionsTotal = currentMonthAcquisitions.reduce((sum, a) => sum + a.total_amount, 0)
-    const prevAcquisitionsTotal = prevMonthAcquisitions.reduce((sum, a) => sum + a.total_amount, 0)
-
-    const currentSalesTotal = currentMonthSales.reduce((sum, s) => sum + s.total_amount, 0)
-    const prevSalesTotal = prevMonthSales.reduce((sum, s) => sum + s.total_amount, 0)
+    const currentAcquisitionsTotal = filteredAcquisitions.reduce((sum, a) => sum + a.total_amount, 0)
+    const currentSalesTotal = filteredSales.reduce((sum, s) => sum + s.total_amount, 0)
 
     const totalStock = inventory.reduce((sum, item) => sum + item.quantity, 0)
     const uniqueMaterials = new Set(inventory.map(item => item.material_id)).size
 
     const currentProfit = currentSalesTotal - currentAcquisitionsTotal
-    const prevProfit = prevSalesTotal - prevAcquisitionsTotal
 
-    const acquisitionsChange = prevAcquisitionsTotal > 0
-      ? ((currentAcquisitionsTotal - prevAcquisitionsTotal) / prevAcquisitionsTotal * 100).toFixed(0)
-      : currentAcquisitionsTotal > 0 ? '+100' : '0'
-
-    const salesChange = prevSalesTotal > 0
-      ? ((currentSalesTotal - prevSalesTotal) / prevSalesTotal * 100).toFixed(0)
-      : currentSalesTotal > 0 ? '+100' : '0'
-
-    const profitChange = prevProfit !== 0
-      ? ((currentProfit - prevProfit) / Math.abs(prevProfit) * 100).toFixed(0)
-      : currentProfit > 0 ? '+100' : currentProfit < 0 ? '-100' : '0'
+    // Count of acquisitions and sales for period
+    const acqCount = filteredAcquisitions.length
+    const salesCount = filteredSales.length
 
     return [
       {
-        name: 'Achizitii luna curenta',
+        name: `Achiziții (${getPeriodLabel()})`,
         value: formatCurrency(currentAcquisitionsTotal),
-        change: `${Number(acquisitionsChange) >= 0 ? '+' : ''}${acquisitionsChange}%`,
-        trend: Number(acquisitionsChange) >= 0 ? 'up' : 'down',
+        change: `${acqCount} achiziții`,
+        trend: 'neutral' as const,
         icon: ShoppingCart,
       },
       {
-        name: 'Vanzari luna curenta',
+        name: `Vânzări (${getPeriodLabel()})`,
         value: formatCurrency(currentSalesTotal),
-        change: `${Number(salesChange) >= 0 ? '+' : ''}${salesChange}%`,
-        trend: Number(salesChange) >= 0 ? 'up' : 'down',
+        change: `${salesCount} vânzări`,
+        trend: 'neutral' as const,
         icon: TrendingUp,
       },
       {
@@ -573,14 +651,14 @@ export function DashboardPage() {
         icon: Package,
       },
       {
-        name: 'Profit luna curenta',
+        name: `Profit (${getPeriodLabel()})`,
         value: formatCurrency(currentProfit),
-        change: `${Number(profitChange) >= 0 ? '+' : ''}${profitChange}%`,
+        change: currentProfit >= 0 ? 'Pozitiv' : 'Negativ',
         trend: currentProfit >= 0 ? 'up' : 'down',
         icon: Banknote,
       },
     ]
-  }, [inventory, acquisitions, sales])
+  }, [inventory, filteredAcquisitions, filteredSales, periodFilter, periodOptions])
 
   // Recent acquisitions (last 5)
   const recentAcquisitions = useMemo(() => {
@@ -604,7 +682,7 @@ export function DashboardPage() {
       message: string
       count: number
       link: string
-      items: Array<{ id: string; name?: string; date?: string; supplier?: string; client?: string; material?: string; quantity?: number }>
+      items: Array<{ id: string; name?: string; date?: string; supplier?: string; client?: string; material?: string; quantity?: number; amount?: number; status?: string }>
     }> = []
 
     // 1. Sales with price 0
@@ -717,6 +795,53 @@ export function DashboardPage() {
       })
     }
 
+    // === NOTIFICĂRI FINANCIARE ===
+
+    // 7. Unpaid acquisitions (payment_status = 'unpaid' or 'partial')
+    const unpaidAcquisitions = acquisitions.filter(acq =>
+      acq.payment_status === 'unpaid' || acq.payment_status === 'partial'
+    )
+    if (unpaidAcquisitions.length > 0) {
+      const totalUnpaid = unpaidAcquisitions.reduce((sum, acq) => sum + (acq.total_amount || 0), 0)
+      issues.push({
+        type: 'warning',
+        category: 'financial_acquisition',
+        message: `Achiziții neplătite (${new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' }).format(totalUnpaid)})`,
+        count: unpaidAcquisitions.length,
+        link: '/achizitii',
+        items: unpaidAcquisitions.slice(0, 10).map(acq => ({
+          id: acq.id,
+          date: acq.date,
+          supplier: acq.supplier?.name || 'N/A',
+          name: `Bon ${acq.receipt_number || 'N/A'}`,
+          amount: acq.total_amount,
+          status: acq.payment_status
+        }))
+      })
+    }
+
+    // 8. Uncollected sales (payment_method = 'bank' typically means not immediately collected)
+    // For now, we consider sales without linked cash transactions as potentially uncollected
+    // This is a simplified check - ideally we'd check against actual collections
+    const salesWithBank = sales.filter(sale => sale.payment_method === 'bank')
+    if (salesWithBank.length > 0) {
+      const totalToCollect = salesWithBank.reduce((sum, sale) => sum + (sale.total_amount || 0), 0)
+      issues.push({
+        type: 'info',
+        category: 'financial_sale',
+        message: `Vânzări cu plată bancară (${new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' }).format(totalToCollect)})`,
+        count: salesWithBank.length,
+        link: '/vanzari',
+        items: salesWithBank.slice(0, 10).map(sale => ({
+          id: sale.id,
+          date: sale.date,
+          client: sale.client?.name || 'N/A',
+          name: `Cântar ${sale.scale_number || 'N/A'}`,
+          amount: sale.total_amount
+        }))
+      })
+    }
+
     return issues
   }, [sales, acquisitions, materialMap, suppliers, clients, contracts, expenses])
 
@@ -796,6 +921,27 @@ export function DashboardPage() {
     <div>
       <Header title="Dashboard" />
       <div className="p-6">
+        {/* Period filter */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Label className="text-sm font-medium">Perioadă:</Label>
+            <select
+              value={periodFilter}
+              onChange={(e) => setPeriodFilter(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {periodOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <span className="text-sm text-muted-foreground">
+              ({new Date(periodRange.start).toLocaleDateString('ro-RO')} - {new Date(periodRange.end).toLocaleDateString('ro-RO')})
+            </span>
+          </div>
+        </div>
+
         {/* Hidden data mode indicator - only for admins */}
         {isAdmin && showHiddenData && (
           <div className="mb-4 flex items-center justify-between rounded-lg border-2 border-dashed border-orange-500 bg-orange-50 dark:bg-orange-950/20 px-4 py-2">
@@ -879,6 +1025,35 @@ export function DashboardPage() {
                             <>
                               <span className="text-muted-foreground">{item.date}</span>
                               <span className="font-medium">{item.name}</span>
+                            </>
+                          )}
+                          {/* For financial acquisitions show date, supplier, bon, amount */}
+                          {notification.category === 'financial_acquisition' && (
+                            <>
+                              <span className="text-muted-foreground">{item.date}</span>
+                              <span className="font-medium">{item.supplier}</span>
+                              <span>•</span>
+                              <span>{item.name}</span>
+                              <span>•</span>
+                              <span className="font-medium text-red-600">
+                                {new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' }).format((item as { amount?: number }).amount || 0)}
+                              </span>
+                              {(item as { status?: string }).status === 'partial' && (
+                                <Badge variant="secondary" className="text-xs">Partial</Badge>
+                              )}
+                            </>
+                          )}
+                          {/* For financial sales show date, client, cantar, amount */}
+                          {notification.category === 'financial_sale' && (
+                            <>
+                              <span className="text-muted-foreground">{item.date}</span>
+                              <span className="font-medium">{item.client}</span>
+                              <span>•</span>
+                              <span>{item.name}</span>
+                              <span>•</span>
+                              <span className="font-medium text-orange-600">
+                                {new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' }).format((item as { amount?: number }).amount || 0)}
+                              </span>
                             </>
                           )}
                         </div>

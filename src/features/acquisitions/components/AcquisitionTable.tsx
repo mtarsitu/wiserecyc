@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
 import {
   Button,
   Badge,
@@ -10,10 +10,10 @@ import {
   TableCell,
   Input,
 } from '@/components/ui'
-import { Search, Pencil, Trash2, Loader2, ChevronDown, ChevronRight, Printer } from 'lucide-react'
+import { Search, Pencil, Trash2, Loader2, ChevronDown, ChevronRight, Printer, CreditCard, FileText } from 'lucide-react'
 import { useUIStore } from '@/stores/ui'
 import type { AcquisitionWithDetails } from '../queries'
-import { useState } from 'react'
+import { getLinkedPayments, type LinkedPayment } from '../queries'
 
 interface AcquisitionTableProps {
   acquisitions: AcquisitionWithDetails[]
@@ -21,8 +21,10 @@ interface AcquisitionTableProps {
   onEdit: (acquisition: AcquisitionWithDetails) => void
   onDelete: (id: string) => void
   onPrintTicket: (acquisition: AcquisitionWithDetails) => void
+  onPrintBorderou: (acquisition: AcquisitionWithDetails) => void
   deleteLoading: boolean
   showHiddenItems?: boolean
+  companyId: string | null
 }
 
 const paymentStatusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' }> = {
@@ -31,16 +33,32 @@ const paymentStatusLabels: Record<string, { label: string; variant: 'default' | 
   unpaid: { label: 'Neplatit', variant: 'destructive' },
 }
 
-export function AcquisitionTable({ acquisitions, isLoading, onEdit, onDelete, onPrintTicket, deleteLoading, showHiddenItems = false }: AcquisitionTableProps) {
+export function AcquisitionTable({ acquisitions, isLoading, onEdit, onDelete, onPrintTicket, onPrintBorderou, deleteLoading, showHiddenItems = false, companyId }: AcquisitionTableProps) {
   const searchQuery = useUIStore((s) => s.getSearchQuery('acquisitions'))
   const setSearchQuery = useUIStore((s) => s.setSearchQuery)
   const deleteConfirm = useUIStore((s) => s.getDeleteConfirm('acquisitions'))
   const setDeleteConfirm = useUIStore((s) => s.setDeleteConfirm)
 
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({})
+  const [paymentsCache, setPaymentsCache] = useState<Record<string, LinkedPayment[]>>({})
+  const [loadingPayments, setLoadingPayments] = useState<Record<string, boolean>>({})
 
-  const toggleRow = (id: string) => {
-    setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }))
+  const toggleRow = async (id: string, receiptNumber: string | null) => {
+    const isExpanding = !expandedRows[id]
+    setExpandedRows((prev) => ({ ...prev, [id]: isExpanding }))
+
+    // Fetch linked payments when expanding (if not already cached)
+    if (isExpanding && companyId && receiptNumber && !paymentsCache[id]) {
+      setLoadingPayments((prev) => ({ ...prev, [id]: true }))
+      try {
+        const payments = await getLinkedPayments(receiptNumber, companyId)
+        setPaymentsCache((prev) => ({ ...prev, [id]: payments }))
+      } catch (error) {
+        console.error('Error fetching payments:', error)
+      } finally {
+        setLoadingPayments((prev) => ({ ...prev, [id]: false }))
+      }
+    }
   }
 
   const filteredAcquisitions = useMemo(() => {
@@ -109,26 +127,26 @@ export function AcquisitionTable({ acquisitions, isLoading, onEdit, onDelete, on
               {filteredAcquisitions.map((acquisition) => (
                 <React.Fragment key={acquisition.id}>
                   <TableRow className="cursor-pointer hover:bg-muted/50">
-                    <TableCell onClick={() => toggleRow(acquisition.id)}>
+                    <TableCell onClick={() => toggleRow(acquisition.id, acquisition.receipt_number)}>
                       {expandedRows[acquisition.id] ? (
                         <ChevronDown className="h-4 w-4" />
                       ) : (
                         <ChevronRight className="h-4 w-4" />
                       )}
                     </TableCell>
-                    <TableCell onClick={() => toggleRow(acquisition.id)}>
+                    <TableCell onClick={() => toggleRow(acquisition.id, acquisition.receipt_number)}>
                       {formatDate(acquisition.date)}
                     </TableCell>
-                    <TableCell onClick={() => toggleRow(acquisition.id)}>
+                    <TableCell onClick={() => toggleRow(acquisition.id, acquisition.receipt_number)}>
                       {acquisition.supplier?.name || '-'}
                     </TableCell>
-                    <TableCell onClick={() => toggleRow(acquisition.id)}>
+                    <TableCell onClick={() => toggleRow(acquisition.id, acquisition.receipt_number)}>
                       {acquisition.receipt_number || '-'}
                     </TableCell>
-                    <TableCell className="text-right font-medium" onClick={() => toggleRow(acquisition.id)}>
+                    <TableCell className="text-right font-medium" onClick={() => toggleRow(acquisition.id, acquisition.receipt_number)}>
                       {formatCurrency(acquisition.total_amount)}
                     </TableCell>
-                    <TableCell onClick={() => toggleRow(acquisition.id)}>
+                    <TableCell onClick={() => toggleRow(acquisition.id, acquisition.receipt_number)}>
                       <Badge variant={paymentStatusLabels[acquisition.payment_status]?.variant || 'secondary'}>
                         {paymentStatusLabels[acquisition.payment_status]?.label || acquisition.payment_status}
                       </Badge>
@@ -137,6 +155,9 @@ export function AcquisitionTable({ acquisitions, isLoading, onEdit, onDelete, on
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" onClick={() => onPrintTicket(acquisition)} title="Printeaza tichet">
                           <Printer className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => onPrintBorderou(acquisition)} title="Printeaza borderou">
+                          <FileText className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => onEdit(acquisition)} title="Editeaza">
                           <Pencil className="h-4 w-4" />
@@ -202,6 +223,70 @@ export function AcquisitionTable({ acquisitions, isLoading, onEdit, onDelete, on
                               ))}
                             </tbody>
                           </table>
+                          {/* Secțiune Plăți */}
+                          <div className="mt-4 pt-4 border-t border-muted">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CreditCard className="h-4 w-4 text-muted-foreground" />
+                              <p className="text-sm font-medium">Detalii plăți:</p>
+                            </div>
+                            {loadingPayments[acquisition.id] ? (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Se încarcă...
+                              </div>
+                            ) : (
+                              <>
+                                {paymentsCache[acquisition.id] && paymentsCache[acquisition.id].length > 0 ? (
+                                  <table className="w-full text-sm mb-2">
+                                    <thead>
+                                      <tr className="text-muted-foreground">
+                                        <th className="text-left py-1">Data</th>
+                                        <th className="text-left py-1">Descriere</th>
+                                        <th className="text-right py-1">Sumă</th>
+                                        <th className="text-left py-1">Metoda</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {paymentsCache[acquisition.id].map((payment) => (
+                                        <tr key={payment.id} className="border-t border-muted">
+                                          <td className="py-1">{formatDate(payment.date)}</td>
+                                          <td className="py-1">{payment.name}</td>
+                                          <td className="text-right py-1 font-medium text-green-600">
+                                            {formatCurrency(payment.amount)}
+                                          </td>
+                                          <td className="py-1 capitalize">
+                                            {payment.payment_method === 'cash' ? 'Numerar' : payment.payment_method === 'bank' ? 'Bancă' : '-'}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">Nicio plată înregistrată</p>
+                                )}
+                                {/* Sumar plăți */}
+                                {(() => {
+                                  const totalPaid = paymentsCache[acquisition.id]?.reduce((sum, p) => sum + p.amount, 0) || 0
+                                  const remaining = acquisition.total_amount - totalPaid
+                                  return (
+                                    <div className="flex gap-6 mt-2 text-sm">
+                                      <div>
+                                        <span className="text-muted-foreground">Total achitat: </span>
+                                        <span className="font-medium text-green-600">{formatCurrency(totalPaid)}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Rest de plată: </span>
+                                        <span className={`font-medium ${remaining > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                          {formatCurrency(remaining)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )
+                                })()}
+                              </>
+                            )}
+                          </div>
+
                           {(acquisition.info || acquisition.notes) && (
                             <div className="mt-3 pt-3 border-t border-muted text-sm">
                               {acquisition.info && <p><span className="text-muted-foreground">Info:</span> {acquisition.info}</p>}

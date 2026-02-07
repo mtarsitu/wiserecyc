@@ -66,9 +66,9 @@ export function SuppliersReportPage() {
     }
   }
 
-  // Keyboard shortcut handler for Ctrl+M / Cmd+M to toggle hidden data view
+  // Keyboard shortcut handler for Ctrl+Shift+H / Cmd+Shift+H to toggle hidden data view
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'h' || e.key === 'H')) {
       e.preventDefault()
       if (isAdmin) {
         if (showHiddenData) {

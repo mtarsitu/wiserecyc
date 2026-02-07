@@ -66,9 +66,9 @@ export function ContractsReportPage() {
   const [passwordInput, setPasswordInput] = useState('')
   const [passwordError, setPasswordError] = useState('')
 
-  // Handler pentru Ctrl+M / Cmd+M
+  // Handler pentru Ctrl+Shift+H / Cmd+Shift+H
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'm') {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'h' || e.key === 'H')) {
       e.preventDefault()
       if (showHiddenAcquisitions) {
         setShowHiddenAcquisitions(false)

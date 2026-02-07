@@ -70,3 +70,37 @@ export const acquisitionDetailQueryOptions = (id: string | null | undefined) =>
     },
     enabled: !!id,
   })
+
+// Query pentru plățile legate de o achiziție (prin referința din notes sau name)
+export interface LinkedPayment {
+  id: string
+  date: string
+  amount: number
+  payment_method: string | null
+  notes: string | null
+  name: string
+}
+
+export async function getLinkedPayments(receiptNumber: string, companyId: string): Promise<LinkedPayment[]> {
+  if (!receiptNumber) return []
+
+  // Căutăm în mai multe variante pentru a fi flexibili:
+  // - "Bon: wssa", "BON wssa", "bon wssa" în notes sau name
+  // - Sau doar "wssa" exact în name (pentru cheltuieli denumite cu nr. bon)
+  // - Sau "wssa" în notes (pentru cheltuieli cu observații conținând nr. bon)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from('expenses')
+    .select('id, date, amount, payment_method, notes, name')
+    .eq('company_id', companyId)
+    .eq('type', 'payment')
+    .or(`notes.ilike.%bon: ${receiptNumber}%,notes.ilike.%bon ${receiptNumber}%,name.ilike.%bon ${receiptNumber}%,name.ilike.%bon: ${receiptNumber}%,notes.ilike.%${receiptNumber}%,name.eq.${receiptNumber}`)
+    .order('date', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching linked payments:', error)
+    return []
+  }
+
+  return data || []
+}
