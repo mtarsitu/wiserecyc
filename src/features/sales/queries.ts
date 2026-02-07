@@ -121,3 +121,37 @@ export const saleDetailQueryOptions = (id: string | null | undefined) =>
     },
     enabled: !!id,
   })
+
+// Query pentru încasările legate de o vânzare (prin referința din notes sau name)
+export interface LinkedCollection {
+  id: string
+  date: string
+  amount: number
+  payment_method: string | null
+  notes: string | null
+  name: string
+}
+
+export async function getLinkedCollections(scaleNumber: string, companyId: string): Promise<LinkedCollection[]> {
+  if (!scaleNumber) return []
+
+  // Căutăm în mai multe variante pentru a fi flexibili:
+  // - "Cântar: 123", "cantar 123" în notes sau name
+  // - Sau doar "123" exact în name (pentru încasări denumite cu nr. cântar)
+  // - Sau "123" în notes (pentru încasări cu observații conținând nr. cântar)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from('expenses')
+    .select('id, date, amount, payment_method, notes, name')
+    .eq('company_id', companyId)
+    .eq('type', 'collection')
+    .or(`notes.ilike.%cântar: ${scaleNumber}%,notes.ilike.%cantar ${scaleNumber}%,name.ilike.%cantar ${scaleNumber}%,name.ilike.%cântar: ${scaleNumber}%,notes.ilike.%${scaleNumber}%,name.eq.${scaleNumber}`)
+    .order('date', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching linked collections:', error)
+    return []
+  }
+
+  return data || []
+}

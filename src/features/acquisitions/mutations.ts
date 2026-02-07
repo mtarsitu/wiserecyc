@@ -27,9 +27,12 @@ interface CreateAcquisitionInput {
   location_type?: LocationType
   contract_id?: string | null
   environment_fund: number
-  total_amount: number
+  tax_amount?: number  // Impozit 10% de plătit la stat (pentru persoane fizice)
+  is_natural_person?: boolean  // Dacă furnizorul este persoană fizică
+  total_amount: number  // Suma plătită furnizorului
   info?: string
   notes?: string
+  goes_to_accounting?: boolean  // Se duce la contabilitate
   created_by?: string
   vehicle_id?: string | null
   driver_id?: string | null
@@ -43,7 +46,7 @@ export function useCreateAcquisition() {
 
   return useMutation({
     mutationFn: async (input: CreateAcquisitionInput) => {
-      const { items, partial_amount, ...acquisitionData } = input
+      const { items, partial_amount, cash_register_id, ...acquisitionData } = input
 
       // Create acquisition
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -129,6 +132,7 @@ export function useCreateAcquisition() {
 
       // Auto-create expense when payment_status is 'paid' or 'partial'
       if (input.payment_status !== 'unpaid') {
+        // Furnizorul primește întotdeauna total_amount (impozitul se plătește separat la stat)
         const paymentAmount = input.payment_status === 'paid'
           ? input.total_amount
           : (partial_amount || 0)
@@ -161,12 +165,12 @@ export function useCreateAcquisition() {
 
           // Get payment method from cash register type
           let paymentMethod: 'cash' | 'bank' | null = null
-          if (input.cash_register_id) {
+          if (cash_register_id) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { data: cashRegister } = await (supabase as any)
               .from('cash_registers')
               .select('type')
-              .eq('id', input.cash_register_id)
+              .eq('id', cash_register_id)
               .single()
 
             if (cashRegister) {
@@ -191,13 +195,13 @@ export function useCreateAcquisition() {
             })
 
           // Also create cash transaction if cash register is selected
-          if (input.cash_register_id) {
+          if (cash_register_id) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await (supabase as any)
               .from('cash_transactions')
               .insert({
                 company_id: input.company_id,
-                cash_register_id: input.cash_register_id,
+                cash_register_id: cash_register_id,
                 date: input.date,
                 type: 'expense',  // Money going out
                 amount: paymentAmount,

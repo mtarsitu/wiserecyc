@@ -24,3 +24,9 @@ export {
 } from './table'
 export { Dialog } from './dialog'
 export { Checkbox } from './checkbox'
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from './dropdown-menu'

@@ -25,7 +25,8 @@ interface AcquisitionItemInput {
   id?: string
   material_id: string
   quantity: number
-  impurities_percent: number
+  impurities_kg: number  // Impurități în KG (UI input)
+  impurities_percent: number  // Calculat automat pentru DB
   final_quantity: number
   price_per_kg: number
   line_total: number
@@ -47,8 +48,10 @@ interface FormData {
   location_type: LocationType
   contract_id: string | null
   environment_fund: number
+  tax_amount: number  // Impozit 10% pentru persoane fizice
   info: string
   notes: string
+  goes_to_accounting: boolean  // Se duce la contabilitate
   items: AcquisitionItemInput[]
   // Transport fields
   vehicle_number: string
@@ -62,7 +65,8 @@ interface FormData {
 const emptyItem: AcquisitionItemInput = {
   material_id: '',
   quantity: 0,
-  impurities_percent: 0,
+  impurities_kg: 0,  // Input în KG
+  impurities_percent: 0,  // Calculat automat
   final_quantity: 0,
   price_per_kg: 0,
   line_total: 0,
@@ -83,8 +87,10 @@ const initialFormData: FormData = {
   location_type: 'curte',
   contract_id: null,
   environment_fund: 0,
+  tax_amount: 0,  // Impozit 10% - se calculează automat pentru persoane fizice
   info: '',
   notes: '',
+  goes_to_accounting: true,  // Default: se duce la contabilitate
   items: [{ ...emptyItem }],
   // Transport defaults
   vehicle_number: '',
@@ -310,6 +316,12 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
         return itemWithType.acquisition_type && itemWithType.acquisition_type !== 'normal'
       })
 
+      // Cast to access potential tax fields
+      const acqWithTax = acquisition as typeof acquisition & {
+        tax_amount?: number
+        is_natural_person?: boolean
+      }
+
       setFormData({
         date: acquisition.date.split('T')[0],
         supplier_id: acquisition.supplier_id || '',
@@ -320,8 +332,10 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
         location_type: acq.location_type || 'curte',
         contract_id: acq.contract_id || null,
         environment_fund: acquisition.environment_fund,
+        tax_amount: acqWithTax.tax_amount || 0,
         info: acquisition.info || '',
         notes: acquisition.notes || '',
+        goes_to_accounting: true,  // Default true când editezi
         // Transport fields
         vehicle_number: acq.vehicle?.vehicle_number || '',
         vehicle_id: acq.vehicle_id || null,
@@ -331,10 +345,13 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
         transport_price: acq.transport_price || 0,
         items: acquisition.items.map((item) => {
           const itemWithType = item as typeof item & { acquisition_type?: AcquisitionType }
+          // Convert percent back to KG for display
+          const impuritiesKg = item.quantity * (item.impurities_percent / 100)
           return {
             id: item.id,
             material_id: item.material_id,
             quantity: item.quantity,
+            impurities_kg: impuritiesKg,
             impurities_percent: item.impurities_percent,
             final_quantity: item.final_quantity,
             price_per_kg: item.price_per_kg,
@@ -362,6 +379,39 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
     return formData.items.reduce((sum, item) => sum + item.line_total, 0)
   }, [formData.items])
 
+  // Detect if supplier is a natural person (no CUI or has CNP - 13 digits)
+  const selectedSupplier = useMemo(() => {
+    return suppliers.find(s => s.id === formData.supplier_id)
+  }, [suppliers, formData.supplier_id])
+
+  const isNaturalPerson = useMemo(() => {
+    if (!selectedSupplier) return false
+    const cui = selectedSupplier.cui?.trim()
+    if (!cui) return true  // No CUI = natural person
+    // CNP has exactly 13 digits
+    if (/^\d{13}$/.test(cui)) return true
+    return false
+  }, [selectedSupplier])
+
+  // Calculate automatic values
+  // Fondul de mediu 2% se aplică la toate achizițiile care merg în contabilitate
+  const calculatedFondMediu = useMemo(() => {
+    if (!formData.goes_to_accounting) return 0  // Only if goes to accounting
+    return Math.round(totalAmount * 0.02 * 100) / 100  // 2%
+  }, [totalAmount, formData.goes_to_accounting])
+
+  // Impozitul 10% se ADAUGĂ pentru persoane fizice (se plătește separat la stat)
+  const calculatedImpozit = useMemo(() => {
+    if (!isNaturalPerson) return 0
+    return Math.round(totalAmount * 0.10 * 100) / 100  // 10%
+  }, [totalAmount, isNaturalPerson])
+
+  // Suma de plătit furnizorului = totalAmount (impozitul se plătește separat la stat)
+  // Total obligații = totalAmount (furnizor) + impozit (stat) + fond mediu (stat)
+  const totalObligations = useMemo(() => {
+    return totalAmount + calculatedImpozit + calculatedFondMediu
+  }, [totalAmount, calculatedImpozit, calculatedFondMediu])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -373,10 +423,14 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
       const item = { ...newItems[index], [field]: value }
 
       // Recalculate final_quantity and line_total when relevant fields change
-      if (field === 'quantity' || field === 'impurities_percent') {
+      // Impurities are now in KG, not percent
+      if (field === 'quantity' || field === 'impurities_kg') {
         const quantity = field === 'quantity' ? Number(value) : item.quantity
-        const impurities = field === 'impurities_percent' ? Number(value) : item.impurities_percent
-        item.final_quantity = quantity * (1 - impurities / 100)
+        const impuritiesKg = field === 'impurities_kg' ? Number(value) : (item.impurities_kg || 0)
+        // Calculate final quantity: quantity - impurities (in KG)
+        item.final_quantity = Math.max(0, quantity - impuritiesKg)
+        // Calculate percent for DB storage
+        item.impurities_percent = quantity > 0 ? (impuritiesKg / quantity) * 100 : 0
         item.line_total = item.final_quantity * item.price_per_kg
       }
 
@@ -493,8 +547,11 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
     e.preventDefault()
     onSubmit({
       ...formData,
-      environment_fund: Number(formData.environment_fund),
-      total_amount: totalAmount,
+      environment_fund: Number(formData.environment_fund) || calculatedFondMediu,
+      tax_amount: calculatedImpozit,  // Impozit 10% de plătit la stat (pentru persoane fizice)
+      total_amount: totalAmount,  // Suma plătită furnizorului
+      is_natural_person: isNaturalPerson,
+      goes_to_accounting: formData.goes_to_accounting,
       // Explicitly map only DB fields, excluding UI-only weight fields
       items: formData.items.map((item) => ({
         id: item.id,
@@ -832,7 +889,7 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                   <th className="px-3 py-2 text-right font-medium">Brut (kg)</th>
                   <th className="px-3 py-2 text-right font-medium">Tara (kg)</th>
                   <th className="px-3 py-2 text-right font-medium">Cantitate (kg)</th>
-                  <th className="px-3 py-2 text-right font-medium">Impuritati (%)</th>
+                  <th className="px-3 py-2 text-right font-medium">Impuritati (kg)</th>
                   <th className="px-3 py-2 text-right font-medium">Cant. finala</th>
                   <th className="px-3 py-2 text-right font-medium">Pret/kg</th>
                   <th className="px-3 py-2 text-right font-medium">Total (RON)</th>
@@ -868,12 +925,14 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                             const net = brut !== null && tara !== null ? Math.max(0, brut - tara) : null
                             setFormData(prev => {
                               const newItems = [...prev.items]
+                              const impuritiesKg = newItems[index].impurities_kg || 0
                               newItems[index] = {
                                 ...newItems[index],
                                 weight_brut: brut,
                                 quantity: net ?? newItems[index].quantity,
-                                final_quantity: net !== null ? net * (1 - newItems[index].impurities_percent / 100) : newItems[index].final_quantity,
-                                line_total: net !== null ? net * (1 - newItems[index].impurities_percent / 100) * newItems[index].price_per_kg : newItems[index].line_total,
+                                final_quantity: net !== null ? Math.max(0, net - impuritiesKg) : newItems[index].final_quantity,
+                                impurities_percent: net !== null && net > 0 ? (impuritiesKg / net) * 100 : 0,
+                                line_total: net !== null ? Math.max(0, net - impuritiesKg) * newItems[index].price_per_kg : newItems[index].line_total,
                               }
                               return { ...prev, items: newItems }
                             })
@@ -894,13 +953,15 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                                 const net = tara !== null ? Math.max(0, brut - tara) : null
                                 setFormData(prev => {
                                   const newItems = [...prev.items]
+                                  const impuritiesKg = newItems[index].impurities_kg || 0
                                   newItems[index] = {
                                     ...newItems[index],
                                     weight_brut: brut,
                                     weight_brut_time: new Date().toISOString(),
                                     quantity: net ?? newItems[index].quantity,
-                                    final_quantity: net !== null ? net * (1 - newItems[index].impurities_percent / 100) : newItems[index].final_quantity,
-                                    line_total: net !== null ? net * (1 - newItems[index].impurities_percent / 100) * newItems[index].price_per_kg : newItems[index].line_total,
+                                    final_quantity: net !== null ? Math.max(0, net - impuritiesKg) : newItems[index].final_quantity,
+                                    impurities_percent: net !== null && net > 0 ? (impuritiesKg / net) * 100 : 0,
+                                    line_total: net !== null ? Math.max(0, net - impuritiesKg) * newItems[index].price_per_kg : newItems[index].line_total,
                                   }
                                   return { ...prev, items: newItems }
                                 })
@@ -927,12 +988,14 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                             const net = brut !== null && tara !== null ? Math.max(0, brut - tara) : null
                             setFormData(prev => {
                               const newItems = [...prev.items]
+                              const impuritiesKg = newItems[index].impurities_kg || 0
                               newItems[index] = {
                                 ...newItems[index],
                                 weight_tara: tara,
                                 quantity: net ?? newItems[index].quantity,
-                                final_quantity: net !== null ? net * (1 - newItems[index].impurities_percent / 100) : newItems[index].final_quantity,
-                                line_total: net !== null ? net * (1 - newItems[index].impurities_percent / 100) * newItems[index].price_per_kg : newItems[index].line_total,
+                                final_quantity: net !== null ? Math.max(0, net - impuritiesKg) : newItems[index].final_quantity,
+                                impurities_percent: net !== null && net > 0 ? (impuritiesKg / net) * 100 : 0,
+                                line_total: net !== null ? Math.max(0, net - impuritiesKg) * newItems[index].price_per_kg : newItems[index].line_total,
                               }
                               return { ...prev, items: newItems }
                             })
@@ -953,13 +1016,15 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                                 const net = brut !== null ? Math.max(0, brut - tara) : null
                                 setFormData(prev => {
                                   const newItems = [...prev.items]
+                                  const impuritiesKg = newItems[index].impurities_kg || 0
                                   newItems[index] = {
                                     ...newItems[index],
                                     weight_tara: tara,
                                     weight_tara_time: new Date().toISOString(),
                                     quantity: net ?? newItems[index].quantity,
-                                    final_quantity: net !== null ? net * (1 - newItems[index].impurities_percent / 100) : newItems[index].final_quantity,
-                                    line_total: net !== null ? net * (1 - newItems[index].impurities_percent / 100) * newItems[index].price_per_kg : newItems[index].line_total,
+                                    final_quantity: net !== null ? Math.max(0, net - impuritiesKg) : newItems[index].final_quantity,
+                                    impurities_percent: net !== null && net > 0 ? (impuritiesKg / net) * 100 : 0,
+                                    line_total: net !== null ? Math.max(0, net - impuritiesKg) * newItems[index].price_per_kg : newItems[index].line_total,
                                   }
                                   return { ...prev, items: newItems }
                                 })
@@ -986,12 +1051,12 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                     <td className="px-2 py-2">
                       <Input
                         type="number"
-                        step="0.1"
+                        step="0.01"
                         min="0"
-                        max="100"
-                        value={item.impurities_percent || ''}
-                        onChange={(e) => handleItemChange(index, 'impurities_percent', e.target.value)}
-                        className="text-right w-16"
+                        max={item.quantity || 999999}
+                        value={item.impurities_kg || ''}
+                        onChange={(e) => handleItemChange(index, 'impurities_kg', e.target.value)}
+                        className="text-right w-20"
                       />
                     </td>
                     <td className="px-2 py-2">
@@ -1002,9 +1067,9 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                           </span>
                           <span className="ml-1 text-xs text-green-600">kg</span>
                         </div>
-                        {item.quantity > 0 && item.impurities_percent > 0 && (
+                        {item.quantity > 0 && Number(item.impurities_kg || 0) > 0 && (
                           <span className="text-xs text-muted-foreground mt-1">
-                            -{item.impurities_percent}% impurități
+                            -{Number(item.impurities_kg || 0).toFixed(2)} kg impurități
                           </span>
                         )}
                       </div>
@@ -1078,10 +1143,62 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
           <div className="flex items-center justify-between">
             <Label className="text-base font-semibold">Plată</Label>
             <div className="text-right">
-              <span className="text-sm text-muted-foreground">Total de plată:</span>
+              <span className="text-sm text-muted-foreground">Total achiziție:</span>
               <span className="ml-2 text-xl font-bold text-primary">{totalAmount.toFixed(2)} RON</span>
             </div>
           </div>
+
+          {/* Tax calculations summary */}
+          {(isNaturalPerson || calculatedFondMediu > 0) && (
+            <div className="rounded-md bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 space-y-2">
+              <div className="text-sm font-medium text-slate-700 dark:text-slate-300">Taxe și contribuții (plătite separat la stat):</div>
+              <div className="grid gap-2 text-sm">
+                {isNaturalPerson && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Impozit 10% (persoană fizică):
+                    </span>
+                    <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">
+                      +{calculatedImpozit.toFixed(2)} RON
+                    </span>
+                  </div>
+                )}
+                {calculatedFondMediu > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Fond mediu 2%:
+                    </span>
+                    <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">
+                      +{calculatedFondMediu.toFixed(2)} RON
+                    </span>
+                  </div>
+                )}
+                <div className="border-t border-slate-200 dark:border-slate-600 pt-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Suma către furnizor:
+                    </span>
+                    <span className="font-mono font-semibold text-green-600 dark:text-green-400">
+                      {totalAmount.toFixed(2)} RON
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="font-medium text-slate-700 dark:text-slate-300">
+                      Total obligații (furnizor + taxe):
+                    </span>
+                    <span className="font-mono text-lg font-bold text-primary">
+                      {totalObligations.toFixed(2)} RON
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {isNaturalPerson && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  * Furnizorul "{selectedSupplier?.name}" este persoană fizică. Impozitul de 10% se virează separat la bugetul de stat.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
@@ -1092,6 +1209,7 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                 value={formData.payment_status}
                 onChange={(e) => {
                   const value = e.target.value as PaymentStatus
+                  // Furnizorul primește întotdeauna totalAmount (impozitul se plătește separat la stat)
                   setFormData(prev => ({
                     ...prev,
                     payment_status: value,
@@ -1107,7 +1225,7 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
               <>
                 <div className="space-y-2">
                   <Label htmlFor="partial_amount">
-                    {formData.payment_status === 'paid' ? 'Sumă plătită' : 'Sumă plătită acum'} (RON) *
+                    {formData.payment_status === 'paid' ? 'Sumă plătită furnizorului' : 'Sumă plătită acum'} (RON) *
                   </Label>
                   <Input
                     id="partial_amount"
@@ -1124,7 +1242,7 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
                   />
                   {formData.payment_status === 'partial' && (
                     <p className="text-xs text-muted-foreground">
-                      Rest de plată: {(totalAmount - (formData.partial_amount || 0)).toFixed(2)} RON
+                      Rest de plată furnizorului: {(totalAmount - (formData.partial_amount || 0)).toFixed(2)} RON
                     </p>
                   )}
                 </div>
@@ -1151,19 +1269,51 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
         </div>
 
         {/* Additional info */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
-            <Label htmlFor="environment_fund">Fond mediu (RON)</Label>
-            <Input
-              id="environment_fund"
-              name="environment_fund"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.environment_fund || ''}
-              onChange={handleChange}
-            />
+            <Label htmlFor="environment_fund">Fond mediu 2% (RON)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="environment_fund"
+                name="environment_fund"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.environment_fund || ''}
+                onChange={handleChange}
+                placeholder={calculatedFondMediu.toFixed(2)}
+                className={formData.environment_fund !== calculatedFondMediu && formData.environment_fund > 0 ? 'border-blue-400' : ''}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setFormData(prev => ({ ...prev, environment_fund: calculatedFondMediu }))}
+                title="Aplică 2% calculat automat"
+                className="shrink-0"
+              >
+                2%
+              </Button>
+            </div>
+            {totalAmount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                2% din {totalAmount.toFixed(2)} = {calculatedFondMediu.toFixed(2)} RON
+              </p>
+            )}
           </div>
+          {isNaturalPerson && (
+            <div className="space-y-2">
+              <Label>Impozit 10% (persoană fizică)</Label>
+              <div className="rounded-md bg-slate-100 dark:bg-slate-800 px-3 py-2 text-right border border-slate-200 dark:border-slate-700">
+                <span className="font-mono text-lg font-bold text-slate-700 dark:text-slate-300">
+                  {calculatedImpozit.toFixed(2)} RON
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Se virează la bugetul de stat
+              </p>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="info">Informatii suplimentare</Label>
             <Input
@@ -1173,6 +1323,21 @@ export function AcquisitionForm({ companyId, acquisition, isLoading, onSubmit, o
               onChange={handleChange}
             />
           </div>
+          {/* Checkbox contabilitate - vizibil doar cu Ctrl+Shift+H */}
+          {showHiddenOptions && (
+            <div className="flex items-center space-x-2 pt-6">
+              <input
+                type="checkbox"
+                id="goes_to_accounting"
+                checked={formData.goes_to_accounting}
+                onChange={(e) => setFormData(prev => ({ ...prev, goes_to_accounting: e.target.checked }))}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <Label htmlFor="goes_to_accounting" className="text-sm font-medium cursor-pointer">
+                Se duce la contabilitate
+              </Label>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">

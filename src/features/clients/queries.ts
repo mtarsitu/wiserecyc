@@ -28,7 +28,8 @@ export const clientsQueryOptions = (companyId: string | null | undefined) =>
 export interface ClientBalance {
   client_id: string
   client_name: string
-  total_sold: number       // Total vândut
+  total_kg: number         // Total kg vândut
+  total_sold: number       // Total vândut (RON)
   total_collected: number  // Total încasat
   remaining: number        // Rămas de încasat
 }
@@ -50,13 +51,13 @@ export const clientBalancesQueryOptions = (companyId: string | null | undefined)
       if (clientsError) throw clientsError
       if (!clients || clients.length === 0) return []
 
-      // Get all sales grouped by client
+      // Get all sales with items grouped by client
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: sales, error: salesError } = await (supabase as any)
         .from('sales')
-        .select('client_id, total_amount, scale_number')
+        .select('client_id, total_amount, scale_number, items:sale_items(final_quantity)')
         .eq('company_id', companyId)
-        .not('client_id', 'is', null) as { data: { client_id: string; total_amount: number; scale_number: string | null }[] | null; error: Error | null }
+        .not('client_id', 'is', null) as { data: { client_id: string; total_amount: number; scale_number: string | null; items: { final_quantity: number }[] }[] | null; error: Error | null }
 
       if (salesError) throw salesError
 
@@ -91,6 +92,12 @@ export const clientBalancesQueryOptions = (companyId: string | null | undefined)
         const clientSales = (sales || []).filter(s => s.client_id === client.id)
         const totalSold = clientSales.reduce((sum, s) => sum + (s.total_amount || 0), 0)
 
+        // Total kg sold to this client (sum of final_quantity from all items)
+        const totalKg = clientSales.reduce((sum, s) => {
+          const itemsKg = (s.items || []).reduce((itemSum, item) => itemSum + (item.final_quantity || 0), 0)
+          return sum + itemsKg
+        }, 0)
+
         // Total collected from this client's sales
         let totalCollected = 0
         for (const sale of clientSales) {
@@ -102,6 +109,7 @@ export const clientBalancesQueryOptions = (companyId: string | null | undefined)
         return {
           client_id: client.id,
           client_name: client.name,
+          total_kg: totalKg,
           total_sold: totalSold,
           total_collected: totalCollected,
           remaining: totalSold - totalCollected,

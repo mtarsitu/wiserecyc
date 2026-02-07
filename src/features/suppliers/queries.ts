@@ -43,7 +43,8 @@ export const supplierQueryOptions = (id: string | undefined) =>
 export interface SupplierBalance {
   supplier_id: string
   supplier_name: string
-  total_purchased: number  // Total achizitionat
+  total_kg: number         // Total kg achiziționat
+  total_purchased: number  // Total achizitionat (RON)
   total_paid: number       // Total achitat
   remaining: number        // Rămas de plată
 }
@@ -65,13 +66,13 @@ export const supplierBalancesQueryOptions = (companyId: string | null | undefine
       if (suppliersError) throw suppliersError
       if (!suppliers || suppliers.length === 0) return []
 
-      // Get all acquisitions grouped by supplier
+      // Get all acquisitions with items grouped by supplier
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: acquisitions, error: acqError } = await (supabase as any)
         .from('acquisitions')
-        .select('supplier_id, total_amount, receipt_number')
+        .select('supplier_id, total_amount, receipt_number, items:acquisition_items(final_quantity)')
         .eq('company_id', companyId)
-        .not('supplier_id', 'is', null) as { data: { supplier_id: string; total_amount: number; receipt_number: string | null }[] | null; error: Error | null }
+        .not('supplier_id', 'is', null) as { data: { supplier_id: string; total_amount: number; receipt_number: string | null; items: { final_quantity: number }[] }[] | null; error: Error | null }
 
       if (acqError) throw acqError
 
@@ -106,6 +107,12 @@ export const supplierBalancesQueryOptions = (companyId: string | null | undefine
         const supplierAcquisitions = (acquisitions || []).filter(a => a.supplier_id === supplier.id)
         const totalPurchased = supplierAcquisitions.reduce((sum, a) => sum + (a.total_amount || 0), 0)
 
+        // Total kg from this supplier (sum of final_quantity from all items)
+        const totalKg = supplierAcquisitions.reduce((sum, a) => {
+          const itemsKg = (a.items || []).reduce((itemSum, item) => itemSum + (item.final_quantity || 0), 0)
+          return sum + itemsKg
+        }, 0)
+
         // Total paid for this supplier's acquisitions
         let totalPaid = 0
         for (const acq of supplierAcquisitions) {
@@ -117,6 +124,7 @@ export const supplierBalancesQueryOptions = (companyId: string | null | undefine
         return {
           supplier_id: supplier.id,
           supplier_name: supplier.name,
+          total_kg: totalKg,
           total_purchased: totalPurchased,
           total_paid: totalPaid,
           remaining: totalPurchased - totalPaid,

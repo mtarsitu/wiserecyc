@@ -25,7 +25,8 @@ interface SaleItemInput {
   id?: string
   material_id: string
   quantity: number
-  impurities_percent: number
+  impurities_kg: number  // Impurități în KG (UI input)
+  impurities_percent: number  // Calculat automat pentru DB
   final_quantity: number
   price_per_ton_usd: number | null
   exchange_rate: number | null
@@ -60,7 +61,8 @@ interface FormData {
 const emptyItem: SaleItemInput = {
   material_id: '',
   quantity: 0,
-  impurities_percent: 0,
+  impurities_kg: 0,  // Input în KG
+  impurities_percent: 0,  // Calculat automat
   final_quantity: 0,
   price_per_ton_usd: null,
   exchange_rate: null,
@@ -252,22 +254,27 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
         notes: sale.notes || '',
         status: sale.status,
         cash_register_id: null,
-        items: sale.items.map((item) => ({
-          id: item.id,
-          material_id: item.material_id,
-          quantity: item.quantity,
-          impurities_percent: item.impurities_percent,
-          final_quantity: item.final_quantity,
-          price_per_ton_usd: item.price_per_ton_usd,
-          exchange_rate: item.exchange_rate,
-          price_per_kg_ron: item.price_per_kg_ron,
-          line_total: item.line_total,
-          // Weight fields per item
-          weight_brut: null,
-          weight_tara: null,
-          weight_brut_time: null,
-          weight_tara_time: null,
-        })),
+        items: sale.items.map((item) => {
+          // Convert percent back to KG for display
+          const impuritiesKg = item.quantity * (item.impurities_percent / 100)
+          return {
+            id: item.id,
+            material_id: item.material_id,
+            quantity: item.quantity,
+            impurities_kg: impuritiesKg,
+            impurities_percent: item.impurities_percent,
+            final_quantity: item.final_quantity,
+            price_per_ton_usd: item.price_per_ton_usd,
+            exchange_rate: item.exchange_rate,
+            price_per_kg_ron: item.price_per_kg_ron,
+            line_total: item.line_total,
+            // Weight fields per item
+            weight_brut: null,
+            weight_tara: null,
+            weight_brut_time: null,
+            weight_tara_time: null,
+          }
+        }),
       })
     } else {
       setFormData(initialFormData)
@@ -313,10 +320,14 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
       const item = { ...newItems[index], [field]: value }
 
       // Recalculate final_quantity and line_total when relevant fields change
-      if (field === 'quantity' || field === 'impurities_percent') {
+      // Impurities are now in KG, not percent
+      if (field === 'quantity' || field === 'impurities_kg') {
         const quantity = field === 'quantity' ? Number(value) : item.quantity
-        const impurities = field === 'impurities_percent' ? Number(value) : item.impurities_percent
-        item.final_quantity = quantity * (1 - impurities / 100)
+        const impuritiesKg = field === 'impurities_kg' ? Number(value) : (item.impurities_kg || 0)
+        // Calculate final quantity: quantity - impurities (in KG)
+        item.final_quantity = Math.max(0, quantity - impuritiesKg)
+        // Calculate percent for DB storage
+        item.impurities_percent = quantity > 0 ? (impuritiesKg / quantity) * 100 : 0
         item.line_total = item.final_quantity * item.price_per_kg_ron
       }
 
@@ -766,7 +777,7 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
                   <th className="px-3 py-2 text-right font-medium">Brut (kg)</th>
                   <th className="px-3 py-2 text-right font-medium">Tara (kg)</th>
                   <th className="px-3 py-2 text-right font-medium">Cantitate (kg)</th>
-                  <th className="px-3 py-2 text-right font-medium">Impuritati (%)</th>
+                  <th className="px-3 py-2 text-right font-medium">Impuritati (kg)</th>
                   <th className="px-3 py-2 text-right font-medium">Cant. finala</th>
                   <th className="px-3 py-2 text-right font-medium">Pret/kg (RON)</th>
                   <th className="px-3 py-2 text-right font-medium">Total (RON)</th>
@@ -802,12 +813,14 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
                             const net = brut !== null && tara !== null ? Math.max(0, brut - tara) : null
                             setFormData(prev => {
                               const newItems = [...prev.items]
+                              const impuritiesKg = newItems[index].impurities_kg || 0
                               newItems[index] = {
                                 ...newItems[index],
                                 weight_brut: brut,
                                 quantity: net ?? newItems[index].quantity,
-                                final_quantity: net !== null ? net * (1 - newItems[index].impurities_percent / 100) : newItems[index].final_quantity,
-                                line_total: net !== null ? net * (1 - newItems[index].impurities_percent / 100) * newItems[index].price_per_kg_ron : newItems[index].line_total,
+                                final_quantity: net !== null ? Math.max(0, net - impuritiesKg) : newItems[index].final_quantity,
+                                impurities_percent: net !== null && net > 0 ? (impuritiesKg / net) * 100 : 0,
+                                line_total: net !== null ? Math.max(0, net - impuritiesKg) * newItems[index].price_per_kg_ron : newItems[index].line_total,
                               }
                               return { ...prev, items: newItems }
                             })
@@ -828,13 +841,15 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
                                 const net = tara !== null ? Math.max(0, brut - tara) : null
                                 setFormData(prev => {
                                   const newItems = [...prev.items]
+                                  const impuritiesKg = newItems[index].impurities_kg || 0
                                   newItems[index] = {
                                     ...newItems[index],
                                     weight_brut: brut,
                                     weight_brut_time: new Date().toISOString(),
                                     quantity: net ?? newItems[index].quantity,
-                                    final_quantity: net !== null ? net * (1 - newItems[index].impurities_percent / 100) : newItems[index].final_quantity,
-                                    line_total: net !== null ? net * (1 - newItems[index].impurities_percent / 100) * newItems[index].price_per_kg_ron : newItems[index].line_total,
+                                    final_quantity: net !== null ? Math.max(0, net - impuritiesKg) : newItems[index].final_quantity,
+                                    impurities_percent: net !== null && net > 0 ? (impuritiesKg / net) * 100 : 0,
+                                    line_total: net !== null ? Math.max(0, net - impuritiesKg) * newItems[index].price_per_kg_ron : newItems[index].line_total,
                                   }
                                   return { ...prev, items: newItems }
                                 })
@@ -861,12 +876,14 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
                             const net = brut !== null && tara !== null ? Math.max(0, brut - tara) : null
                             setFormData(prev => {
                               const newItems = [...prev.items]
+                              const impuritiesKg = newItems[index].impurities_kg || 0
                               newItems[index] = {
                                 ...newItems[index],
                                 weight_tara: tara,
                                 quantity: net ?? newItems[index].quantity,
-                                final_quantity: net !== null ? net * (1 - newItems[index].impurities_percent / 100) : newItems[index].final_quantity,
-                                line_total: net !== null ? net * (1 - newItems[index].impurities_percent / 100) * newItems[index].price_per_kg_ron : newItems[index].line_total,
+                                final_quantity: net !== null ? Math.max(0, net - impuritiesKg) : newItems[index].final_quantity,
+                                impurities_percent: net !== null && net > 0 ? (impuritiesKg / net) * 100 : 0,
+                                line_total: net !== null ? Math.max(0, net - impuritiesKg) * newItems[index].price_per_kg_ron : newItems[index].line_total,
                               }
                               return { ...prev, items: newItems }
                             })
@@ -887,13 +904,15 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
                                 const net = brut !== null ? Math.max(0, brut - tara) : null
                                 setFormData(prev => {
                                   const newItems = [...prev.items]
+                                  const impuritiesKg = newItems[index].impurities_kg || 0
                                   newItems[index] = {
                                     ...newItems[index],
                                     weight_tara: tara,
                                     weight_tara_time: new Date().toISOString(),
                                     quantity: net ?? newItems[index].quantity,
-                                    final_quantity: net !== null ? net * (1 - newItems[index].impurities_percent / 100) : newItems[index].final_quantity,
-                                    line_total: net !== null ? net * (1 - newItems[index].impurities_percent / 100) * newItems[index].price_per_kg_ron : newItems[index].line_total,
+                                    final_quantity: net !== null ? Math.max(0, net - impuritiesKg) : newItems[index].final_quantity,
+                                    impurities_percent: net !== null && net > 0 ? (impuritiesKg / net) * 100 : 0,
+                                    line_total: net !== null ? Math.max(0, net - impuritiesKg) * newItems[index].price_per_kg_ron : newItems[index].line_total,
                                   }
                                   return { ...prev, items: newItems }
                                 })
@@ -927,12 +946,11 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
                     <td className="px-2 py-2">
                       <Input
                         type="number"
-                        step="0.1"
+                        step="0.01"
                         min="0"
-                        max="100"
-                        value={item.impurities_percent || ''}
-                        onChange={(e) => handleItemChange(index, 'impurities_percent', e.target.value)}
-                        className="text-right"
+                        value={item.impurities_kg || ''}
+                        onChange={(e) => handleItemChange(index, 'impurities_kg', e.target.value)}
+                        className="text-right w-20"
                       />
                     </td>
                     <td className="px-2 py-2">
@@ -943,9 +961,9 @@ export function SaleForm({ companyId, sale, isLoading, onSubmit, onCancel }: Sal
                           </span>
                           <span className="ml-1 text-xs text-green-600">kg</span>
                         </div>
-                        {item.quantity > 0 && item.impurities_percent > 0 && (
+                        {item.quantity > 0 && Number(item.impurities_kg || 0) > 0 && (
                           <span className="text-xs text-muted-foreground mt-1">
-                            -{item.impurities_percent}% impurități
+                            -{Number(item.impurities_kg || 0).toFixed(2)} kg impurități
                           </span>
                         )}
                       </div>
